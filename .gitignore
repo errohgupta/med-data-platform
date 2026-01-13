@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+venv/
+env/
+
+# IDEs
+.vscode/
+.idea/
+
+# Databases
+*.db
+backend/medical_platform.db
+backend/employees.db
+*.sqlite3
+
+# Logs
+*.log
+backend/backend.log
+
+# User Content
+backend/static/uploads/
+backend/static/profile_pics/
+
+# OS specific
+.DS_Store
+Thumbs.db

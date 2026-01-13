@@ -1,0 +1,65 @@
+/* 1. Global Reset & Font */
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+
+body {
+    /* Adaptive Deep Theme: Midnight Blue */
+    background: radial-gradient(circle at top left, #1e293b, #0f172a);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    overflow: hidden;
+}
+
+/* 2. The Glass Card */
+.glass-container {
+    width: 400px;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.05); /* Highly transparent */
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px); /* This creates the Frosted Glass effect */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    text-align: center;
+}
+
+/* 3. Typography */
+h1 { margin-bottom: 10px; font-weight: 300; letter-spacing: 2px; }
+p.subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 30px; }
+
+/* 4. Inputs */
+.input-group { margin-bottom: 20px; text-align: left; }
+label { display: block; color: #cbd5e1; font-size: 0.8rem; margin-bottom: 5px; }
+input, select {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    outline: none;
+    transition: 0.3s;
+}
+input:focus { border-color: #00f260; box-shadow: 0 0 10px rgba(0, 242, 96, 0.2); }
+
+/* 5. Button (Electric Green Gradient) */
+.btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #00f260 0%, #0575e6 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.btn-primary:hover { transform: scale(1.02); }
+
+/* 6. Geometric Logo (Pure CSS) */
+.logo-geo {
+    width: 60px; height: 60px; margin: 0 auto 20px;
+    background: linear-gradient(45deg, #00f260, #0575e6);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}

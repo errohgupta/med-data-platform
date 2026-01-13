@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Audit & Payouts</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* --- CORE AUDIT LAYOUT --- */
+        body { 
+            background: #0f172a; color: #f1f5f9; min-height: 100vh; margin: 0; 
+            font-family: 'Inter', system-ui, sans-serif; display: flex; flex-direction: column;
+        }
+
+        .header {
+            background: #1e293b; padding: 18px 40px; display: flex; justify-content: space-between;
+            align-items: center; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 100;
+        }
+
+        .container { max-width: 1300px; margin: 40px auto; padding: 0 20px; width: 100%; box-sizing: border-box; }
+
+        /* --- BATCH QUEUE CARDS --- */
+        .batch-card {
+            background: #1e293b; border-radius: 16px; padding: 24px; margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid rgba(255,255,255,0.05); transition: 0.2s;
+        }
+        .batch-card:hover { border-color: #00f260; transform: scale(1.01); }
+
+        .batch-info h3 { margin: 0 0 8px 0; color: #fff; font-size: 1.2rem; }
+        .batch-meta { font-size: 0.85rem; color: #94a3b8; display: flex; gap: 20px; }
+
+        /* --- REVIEW OVERLAY --- */
+        #reviewOverlay {
+            position: fixed; top: 0; right: 0; width: 600px; height: 100vh;
+            background: #111827; border-left: 2px solid #334155; display: none;
+            flex-direction: column; z-index: 1001; box-shadow: -20px 0 50px rgba(0,0,0,0.8);
+            animation: slideLeft 0.3s ease-out;
+        }
+        @keyframes slideLeft { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+        .overlay-header { padding: 25px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        .submission-list { flex: 1; overflow-y: auto; padding: 20px; }
+        .review-footer { padding: 25px; border-top: 1px solid #334155; background: #1f2937; }
+
+        /* --- ITEM CARDS --- */
+        .item-row {
+            background: #1e293b; border-radius: 12px; padding: 15px; margin-bottom: 15px;
+            display: flex; gap: 15px; border: 1px solid #374151;
+        }
+        .item-row img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; cursor: zoom-in; }
+        .item-data { flex: 1; font-size: 0.85rem; }
+        .data-label { color: #94a3b8; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 4px; }
+
+        /* --- CUSTOM NOTIFY --- */
+        #toast {
+            position: fixed; bottom: 30px; right: 30px; background: #00f260; color: #000;
+            padding: 16px 32px; border-radius: 12px; font-weight: 800; display: none; z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast">Success</div>
+
+    <header class="header">
+        <div style="font-weight: 900; color: #00f260; font-size: 1.3rem;">ADMIN CONSOLE | AUDIT</div>
+        <button onclick="window.location.href='/admin/dashboard'" class="btn-primary" style="width: auto; background: #334155;">BACK TO DASHBOARD</button>
+    </header>
+
+    <main class="container">
+        <h2 style="margin-bottom: 30px; font-weight: 800;">Pending Approvals</h2>
+        <div id="payoutQueue">
+            <p style="color: #64748b;">Scanning for finalized batches...</p>
+        </div>
+    </main>
+
+    <div id="reviewOverlay">
+        <div class="overlay-header">
+            <div>
+                <h2 id="reviewBatchId" style="margin: 0;">BATCH ID</h2>
+                <p id="reviewEmpName" style="margin: 5px 0 0 0; color: #00f260; font-weight: 700;"></p>
+            </div>
+            <button onclick="closeReview()" style="background: none; border: none; color: #ef4444; font-weight: 900; cursor: pointer;">[ CLOSE ]</button>
+        </div>
+
+        <div class="submission-list" id="submissionContainer">
+            </div>
+
+        <div class="review-footer">
+            <textarea id="auditComment" placeholder="Enter feedback, rejection reason, or approval notes (optional)..." style="width:100%; box-sizing:border-box; background:#0f172a; border:1px solid #334155; padding:10px; color:#fff; border-radius:8px; height:80px; margin-bottom:15px; resize:none; font-family:inherit;"></textarea>
+
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <span style="color: #94a3b8; font-weight: 700;">TOTAL PAYOUT DUE:</span>
+                <span id="payoutTotal" style="color: #00f260; font-weight: 900; font-size: 1.2rem;">₹0.00</span>
+            </div>
+            <div style="display:flex; gap:15px;">
+                <button id="rejectBtn" style="flex:1; background:rgba(239, 68, 68, 0.1); border:1px solid #ef4444; color:#ef4444; border-radius:8px; font-weight:900; cursor:pointer;">REJECT & RETURN</button>
+                <button id="approveBtn" class="btn-primary" style="flex:2; background: #00f260; color: #000; font-weight: 900;">APPROVE & RELEASE FUNDS</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- RENDER AUDIT QUEUE --- */
+        async function loadAuditQueue() {
+            const res = await fetch('/api/admin/finalized-projects');
+            const data = await res.json();
+            const container = document.getElementById('payoutQueue');
+            container.innerHTML = data.length ? "" : "<p style='color:#64748b;'>Queue Clear: No batches currently pending audit.</p>";
+
+            data.forEach(p => {
+                container.innerHTML += `
+                    <div class="batch-card">
+                        <div class="batch-info">
+                            <h3>Batch: ${p.id}</h3>
+                            <div class="batch-meta">
+                                <span>Employee: <b>${p.employee_name}</b></span>
+                                <span>Volume: <b>${p.image_count} images</b></span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 24px;">
+                            <div style="text-align: right">
+                                <div style="color: #00f260; font-weight: 900; font-size: 1.1rem;">₹${p.total_due.toFixed(2)}</div>
+                                <div style="font-size: 0.65rem; color: #94a3b8; font-weight: 700;">PAYOUT CALCULATED</div>
+                            </div>
+                            <button class="btn-primary" style="width: auto; padding: 12px 24px;" onclick="openReview('${p.id}', '${p.employee_name}', ${p.total_due})">AUDIT WORK</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        /* --- OPEN WORK REVIEW --- */
+        async function openReview(pid, name, total) {
+            document.getElementById('reviewBatchId').innerText = pid;
+            document.getElementById('reviewEmpName').innerText = `Staff: ${name}`;
+            document.getElementById('payoutTotal').innerText = `₹${total.toFixed(2)}`;
+            
+            const res = await fetch(`/api/admin/project-submissions/${pid}`);
+            const subs = await res.json();
+            const container = document.getElementById('submissionContainer');
+            container.innerHTML = "";
+
+            subs.forEach(s => {
+                container.innerHTML += `
+                    <div class="item-row">
+                        <img src="/${s.image_url}" onclick="window.open(this.src)">
+                        <div class="item-data">
+                            <div class="data-label">IMG #${s.sequence} | Transcription</div>
+                            <div style="color: #fff; font-weight: 700; margin-bottom: 8px;">${s.data.name || 'N/A'}</div>
+                            <div style="color: #94a3b8; font-style: italic; font-size: 0.8rem;">${s.data.notes || 'No notes provided.'}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('approveBtn').onclick = () => confirmPayout(pid);
+            document.getElementById('rejectBtn').onclick = () => rejectBatch(pid);
+            document.getElementById('reviewOverlay').style.display = "flex";
+            document.getElementById('auditComment').value = ""; // Reset
+        }
+
+        async function rejectBatch(pid) {
+            const reason = document.getElementById('auditComment').value;
+            if(!reason || reason.trim().length < 5) return alert("⚠️ Please provide a rejection reason/feedback (min 5 chars) so the employee knows what to fix.");
+            
+            if(!confirm("REJECT BATCH? This will send it back to the employee queue for corrections.")) return;
+
+            const res = await fetch('/api/admin/reject-project', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ project_id: pid, reason: reason })
+            });
+            if(res.ok) { showToast("Batch Rejected & Returned"); closeReview(); loadAuditQueue(); }
+        }
+
+        /* --- PAYDAY LOGIC --- */
+        async function confirmPayout(pid) {
+            if (!confirm("RELEASE FUNDS? This will transfer the balance to the employee's wallet and close this batch forever.")) return;
+
+            const res = await fetch('/api/admin/approve-project', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ employee_id: 'internal_admin', project_id: pid })
+            });
+
+            if (res.ok) {
+                showToast("✓ Payment Released & Payout Synchronized");
+                closeReview();
+                loadAuditQueue();
+            }
+        }
+
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            t.innerText = m; t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, 4000);
+        }
+
+        function closeReview() { document.getElementById('reviewOverlay').style.display = "none"; }
+
+        // Bootstrap
+        loadAuditQueue();
+    </script>
+</body>
+</html>

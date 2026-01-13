@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedData | Workstation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE VARIABLES --- */
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.6);
+            --border: rgba(255,255,255,0.1);
+            --primary: #38bdf8;
+            --accent: #818cf8;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+        }
+
+        /* --- LAYOUT RESET --- */
+        body { 
+            padding: 0; margin: 0; 
+            overflow: hidden; 
+            display: flex; flex-direction: column; height: 100vh;
+            background: #0f172a;
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-main);
+        }
+        
+        /* --- HEADER --- */
+        header {
+            height: 64px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center; padding: 0 30px;
+            z-index: 100;
+        }
+        .brand { font-weight: 800; font-size: 1.2rem; background: linear-gradient(to right, var(--primary), var(--accent)); -webkit-background-clip: text; color: transparent; letter-spacing: -0.5px; }
+
+        .batch-badge {
+            background: rgba(255, 255, 255, 0.05); padding: 5px 12px; 
+            border-radius: 8px; font-size: 0.85rem; font-weight: 600; 
+            color: var(--text-muted); margin-left: 15px; border: 1px solid var(--border);
+        }
+
+        /* --- WORKSPACE GRID --- */
+        .workspace { display: flex; flex: 1; height: calc(100vh - 64px); width: 100%; }
+
+        /* --- VIEWER PANE (Left/Top) --- */
+        .viewer-pane {
+            flex: 1; background: #000; position: relative; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; cursor: grab;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+        }
+        .viewer-pane:active { cursor: grabbing; }
+        
+        .viewer-pane img { 
+            max-width: 90%; max-height: 90%; 
+            transform-origin: center; transition: transform 0.1s cubic-bezier(0.1, 0.7, 1.0, 0.1); 
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        .viewer-controls { 
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
+            background: rgba(15, 23, 42, 0.8); padding: 10px 24px; border-radius: 40px; 
+            display: flex; gap: 24px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .viewer-btn { background: none; border: none; color: #cbd5e1; font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
+        .viewer-btn:hover { color: var(--primary); transform: scale(1.2); }
+
+        /* --- EDITOR PANE (Right/Bottom) --- */
+        .editor-pane {
+            width: 480px; background: var(--panel-bg); border-left: 1px solid var(--border);
+            padding: 35px; overflow-y: auto; display: flex; flex-direction: column;
+            backdrop-filter: blur(20px);
+        }
+        
+        .form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        
+        .input-group { margin-bottom: 25px; }
+        label { display: block; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; margin-bottom: 10px; letter-spacing: 1px; text-transform: uppercase; }
+        
+        input, textarea {
+            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); 
+            color: white; padding: 16px; border-radius: 12px; font-family: inherit; font-size: 1rem;
+            transition: 0.3s; box-sizing: border-box;
+        }
+        input:focus, textarea:focus { border-color: var(--primary); outline: none; background: rgba(0,0,0,0.5); box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1); }
+        textarea { line-height: 1.6; }
+
+        /* --- NAVIGATION FOOTER --- */
+        .nav-footer { display: flex; gap: 15px; margin-top: auto; padding-top: 25px; border-top: 1px solid var(--border); }
+        
+        .btn-nav { 
+            flex: 1; background: rgba(255,255,255,0.05); color: white; padding: 16px; 
+            border: 1px solid transparent; border-radius: 12px; cursor: pointer; font-weight: 600; transition: 0.2s; 
+        }
+        .btn-nav:hover { background: rgba(255,255,255,0.1); }
+        
+        .btn-submit { 
+            flex: 2; background: white; color: #0f172a; 
+            font-weight: 700; border: none;
+        }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(255, 255, 255, 0.15); background: #f8fafc; }
+
+        /* --- EXIT BUTTON --- */
+        .btn-exit {
+            background: transparent; border: 1px solid rgba(239, 68, 68, 0.5); color: var(--danger);
+            padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem;
+            transition: 0.2s;
+        }
+        .btn-exit:hover { background: rgba(239, 68, 68, 0.1); border-color: var(--danger); }
+
+        /* --- MOBILE RESPONSIVE --- */
+        @media (max-width: 900px) {
+            body { overflow: auto; height: auto; display: block; }
+            header { padding: 15px; flex-direction: row; gap: 10px; height: auto; flex-wrap: wrap; }
+            .workspace { flex-direction: column; height: auto; display: block; }
+            .viewer-pane { height: 50vh; width: 100%; border-bottom: 1px solid var(--border); }
+            .editor-pane { width: 100%; height: auto; box-shadow: none; border-left: none; padding: 25px; box-sizing: border-box; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display: flex; align-items: center;">
+            <span class="brand">MED DATA</span>
+            <span id="projectLabel" class="batch-badge">LOADING...</span>
+        </div>
+        <button onclick="exitWorkspace()" class="btn-exit">EXIT WORKSPACE</button>
+    </header>
+
+    <div class="workspace">
+        <div class="viewer-pane" id="panContainer">
+            <p id="loadingText" style="position: absolute; color: var(--text-muted); font-weight: 500;">Retrieving Document...</p>
+            <img id="prescriptionImage" src="" style="display:none;" alt="Medical Record">
+            
+            <div class="viewer-controls">
+                <button class="viewer-btn" onclick="adjustZoom(-0.2)">—</button>
+                <button class="viewer-btn" onclick="resetZoom()">↺</button>
+                <button class="viewer-btn" onclick="adjustZoom(0.2)">＋</button>
+            </div>
+        </div>
+
+        <div class="editor-pane">
+            <div class="form-header">
+                <h2 style="margin:0; font-size: 1.4rem;">Record Entry</h2>
+                <div id="saveStatus" style="font-size: 0.8rem; color: var(--primary); opacity: 0.8;" class="pulse-active">● Ready</div>
+            </div>
+            
+             <style>
+                @keyframes pulse-soft { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+                .pulse-active { animation: pulse-soft 2s infinite; }
+            </style>
+            
+            <form id="transcriptionForm" style="display: flex; flex-direction: column; flex: 1;">
+                <div class="input-group">
+                    <label>Patient Full Name</label>
+                    <input type="text" id="pName" placeholder="Exact name as in document" required oninput="triggerAutoSave()" autocomplete="off">
+                </div>
+                
+                    <label>Clinical Notes / Diagnosis</label>
+                    <textarea id="diagnosis" placeholder="Overall diagnosis or notes..." style="min-height: 80px; margin-bottom: 20px;"></textarea>
+
+                    <label>Prescribed Medicines</label>
+                    <div style="flex: 1; overflow-y: auto; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 12px; padding: 10px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--border); text-align: left; color: var(--text-muted); font-size: 0.8rem;">
+                                    <th style="padding: 10px;">Medicine Name</th>
+                                    <th style="padding: 10px; width: 80px;">Dose</th>
+                                    <th style="padding: 10px; width: 80px;">Freq</th>
+                                    <th style="padding: 10px; width: 80px;">Days</th>
+                                    <th style="width: 40px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="medList">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                        <button type="button" onclick="addMedRow()" style="margin-top: 10px; width: 100%; padding: 8px; border: 1px dashed var(--border); background: transparent; color: var(--primary); border-radius: 8px; cursor: pointer;">
+                            + Add Medicine
+                        </button>
+                    </div>
+                </div>
+
+                <datalist id="drugSuggestions">
+                    <option value="Paracetamol">
+                    <option value="Amoxicillin">
+                    <option value="Ibuprofen">
+                    <option value="Cetirizine">
+                    <option value="Metformin">
+                    <option value="Aspirin">
+                    <option value="Azithromycin">
+                    <option value="Pantoprazole">
+                    <option value="Ciprofloxacin">
+                    <option value="Metoprolol">
+                </datalist>
+
+                <div class="nav-footer">
+                    <button type="button" class="btn-nav" onclick="navigateWork(-1)">PREV</button>
+                    <button type="submit" id="submitBtn" class="btn-nav btn-submit">SAVE ENTRY</button>
+                    <button type="button" class="btn-nav" onclick="navigateWork(1)">SKIP</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. SECURE AUTH CONFIG ---
+        const userId = localStorage.getItem('user_id');
+        const currentBatchId = localStorage.getItem('current_project_id');
+        
+        function getAuthHeader() {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = '/'; return {}; }
+            return {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        async function fetchSecure(url, options = {}) {
+            const headers = getAuthHeader();
+            options.headers = { ...headers, ...options.headers };
+            try {
+                const res = await fetch(url, options);
+                if (res.status === 401 || res.status === 403) {
+                    alert("Session expired."); window.location.href = "/"; return null;
+                }
+                return res;
+            } catch (e) { console.error(e); return null; }
+        }
+
+        // --- 2. INITIALIZATION CHECKS ---
+        if (!userId || !currentBatchId) {
+            window.location.href = "/employee/home";
+            throw new Error("Redirecting...");
+        }
+
+        document.getElementById('projectLabel').innerText = `BATCH ${currentBatchId.split('-')[1] || '...'}`;
+
+        function updateModeBadge(isReview) {
+             const badge = document.querySelector('.batch-badge');
+             if(isReview) {
+                 badge.innerText = "REVIEW MODE";
+                 badge.style.borderColor = "#facc15";
+                 badge.style.color = "#facc15";
+                 badge.style.background = "rgba(250, 204, 21, 0.1)";
+             } else {
+                 badge.innerText = "PRIORITY ASSIGNMENT";
+                 badge.style.borderColor = "var(--border)";
+                 badge.style.color = "var(--text-muted)";
+                 badge.style.background = "rgba(255, 255, 255, 0.05)";
+             }
+        }
+
+        // --- 3. STATE & WORKFLOW ---
+        let currentImageId = null;
+        let currentSeq = 1;
+        let scale = 1, pointX = 0, pointY = 0, panning = false, startX = 0, startY = 0;
+        let autoSaveTimeout;
+
+        async function loadWork(seq = null) {
+            // UI Reset
+            const imgEl = document.getElementById('prescriptionImage');
+            imgEl.style.display = 'none';
+            document.getElementById('loadingText').style.display = 'block';
+            document.getElementById('transcriptionForm').reset();
+            resetZoom();
+
+            // Secure API Call
+            const res = await fetchSecure('/work/allocate', {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    employee_id: userId, 
+                    project_id: currentBatchId, 
+                    sequence_index: seq 
+                })
+            });
+
+            if(!res || !res.ok) {
+                alert("Batch completed or locked by Admin."); 
+                return window.location.href = "/employee/home";
+            }
+
+            const data = await res.json();
+            
+            // Handle Response
+            if(data.images && data.images.length > 0) {
+                const imgData = data.images[0];
+                currentImageId = imgData.id;
+                currentSeq = imgData.sequence;
+                
+                updateModeBadge(data.is_review);
+                
+                // Fix path for static files
+                let url = imgData.url.startsWith('/') ? imgData.url : '/' + imgData.url;
+                
+                imgEl.src = url;
+                imgEl.onload = () => {
+                    imgEl.style.display = 'block';
+                    document.getElementById('loadingText').style.display = 'none';
+                };
+
+                // Load Data
+                loadDraftOrHistory(currentImageId);
+            } else {
+                alert("🎉 You have completed all images in this batch!");
+                window.location.href = "/employee/home";
+            }
+        }
+
+        async function loadDraftOrHistory(imgId) {
+            let data = null;
+            
+            // Check Server First
+            const dbRes = await fetchSecure(`/work/get_submission/${userId}/${imgId}`);
+            if(dbRes) {
+                const dbData = await dbRes.json();
+                if(dbData.data) {
+                    data = dbData.data;
+                    setStatus("Loaded from history");
+                }
+            }
+            
+            // Fallback to Local Draft
+            if(!data) {
+                const draft = localStorage.getItem(`draft_${userId}_${imgId}`);
+                if(draft) {
+                    data = JSON.parse(draft);
+                    setStatus("Restored unsaved draft");
+                }
+            }
+
+            // Populate Form
+            document.getElementById('medList').innerHTML = ""; // Clear table
+            if(data) {
+                document.getElementById('pName').value = data.name || "";
+                document.getElementById('diagnosis').value = data.notes || "";
+                if(data.medicines && Array.isArray(data.medicines)) {
+                    data.medicines.forEach(m => addMedRow(m));
+                }
+            }
+             
+            if(!document.getElementById('medList').hasChildNodes()) addMedRow(); // Add empty row if new
+        }
+        
+        // --- V2 MEDICINE TABLE ---
+        function addMedRow(data = {}) {
+            const tbody = document.getElementById('medList');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="padding: 5px;"><input list="drugSuggestions" placeholder="Name" value="${data.name||''}" style="font-size: 0.9rem; padding: 8px;" oninput="triggerAutoSave()"></td>
+                <td style="padding: 5px;"><input placeholder="500mg" value="${data.dose||''}" style="font-size: 0.9rem; padding: 8px;" oninput="triggerAutoSave()"></td>
+                <td style="padding: 5px;"><input placeholder="BD" value="${data.freq||''}" style="font-size: 0.9rem; padding: 8px;" oninput="triggerAutoSave()"></td>
+                <td style="padding: 5px;"><input placeholder="5" value="${data.days||''}" style="font-size: 0.9rem; padding: 8px;" oninput="triggerAutoSave()"></td>
+                <td style="text-align: center;"><button type="button" onclick="this.closest('tr').remove(); triggerAutoSave()" style="background:none; border:none; color:var(--danger); cursor:pointer;">×</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        // --- 4. AUTO-SAVE ENGINE ---
+        function triggerAutoSave() {
+            setStatus("Saving draft...");
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                const data = scrapeFormData();
+                localStorage.setItem(`draft_${userId}_${currentImageId}`, JSON.stringify(data));
+                setStatus("Draft saved locally");
+            }, 800);
+        }
+        
+        function scrapeFormData() {
+            const meds = [];
+            document.querySelectorAll('#medList tr').forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                if(inputs[0].value) {
+                    meds.push({
+                        name: inputs[0].value,
+                        dose: inputs[1].value,
+                        freq: inputs[2].value,
+                        days: inputs[3].value
+                    });
+                }
+            });
+            
+            return {
+                name: document.getElementById('pName').value,
+                notes: document.getElementById('diagnosis').value,
+                medicines: meds
+            };
+        }
+
+        function setStatus(msg) {
+            document.getElementById('saveStatus').innerText = `● ${msg}`;
+        }
+
+        // --- 5. SUBMISSION ---
+            // 5. ANIMATION UTILS
+            function triggerConfetti() {
+                for (let i = 0; i < 50; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'fixed';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.top = '-10px';
+                    confetti.style.width = '10px';
+                    confetti.style.height = '10px';
+                    confetti.style.background = ['#ff0', '#f00', '#0f0', '#00f', '#f0f'][Math.floor(Math.random() * 5)];
+                    confetti.style.zIndex = '9999';
+                    confetti.style.pointerEvents = 'none';
+                    document.body.appendChild(confetti);
+                    
+                    confetti.animate([
+                        { transform: `translateY(0) rotate(0)`, opacity: 1 },
+                        { transform: `translateY(100vh) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+                    ], {
+                        duration: (Math.random() * 3 + 2) * 1000,
+                        easing: 'linear', iterations: 1
+                    }).onfinish = () => confetti.remove();
+                }
+            }
+
+        document.getElementById('transcriptionForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerText;
+            
+            btn.innerText = "SYNCING..."; 
+            btn.disabled = true;
+            btn.style.opacity = "0.7";
+
+            const payload = {
+                employee_id: userId, 
+                image_id: currentImageId,
+                form_data: scrapeFormData()
+            };
+
+            const res = await fetchSecure('/work/submit', {
+                method: 'POST', body: JSON.stringify(payload)
+            });
+
+            btn.innerText = originalText; 
+            btn.disabled = false;
+            btn.style.opacity = "1";
+
+            if(res && res.ok) {
+                // Clear draft on success
+                localStorage.removeItem(`draft_${userId}_${currentImageId}`);
+                
+                // Animation & Delay
+                triggerConfetti();
+                setTimeout(() => {
+                     loadWork(currentSeq + 1);
+                }, 1500);
+            } else {
+                alert("Save failed. Please check your connection.");
+            }
+        };
+
+        function navigateWork(dir) {
+            if(currentSeq + dir < 1) return;
+            loadWork(currentSeq + dir);
+        }
+
+        // --- 6. VIEWER LOGIC (Zoom/Pan) ---
+        const imgEl = document.getElementById('prescriptionImage');
+        const panEl = document.getElementById('panContainer');
+        
+        function adjustZoom(d) { scale = Math.max(0.5, Math.min(5, scale + d)); updateTransform(); }
+        function resetZoom() { scale = 1; pointX = 0; pointY = 0; updateTransform(); }
+        function updateTransform() { imgEl.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
+
+        // Mouse Events
+        panEl.onmousedown = (e) => { 
+            if(e.target === imgEl) { panning = true; startX = e.clientX - pointX; startY = e.clientY - pointY; }
+        };
+        window.onmousemove = (e) => { 
+            if(panning) { pointX = e.clientX - startX; pointY = e.clientY - startY; updateTransform(); }
+        };
+        window.onmouseup = () => { panning = false; };
+        
+        // Touch Events (Mobile)
+        panEl.ontouchstart = (e) => { 
+            if(e.touches.length === 1) { panning = true; startX = e.touches[0].clientX - pointX; startY = e.touches[0].clientY - pointY; }
+        };
+        window.ontouchmove = (e) => { 
+            if(panning && e.touches.length === 1) { 
+                e.preventDefault(); // Stop scroll while panning image
+                pointX = e.touches[0].clientX - startX; pointY = e.touches[0].clientY - startY; updateTransform(); 
+            }
+        };
+        window.ontouchend = () => { panning = false; };
+
+        function exitWorkspace() {
+             if(confirm("Exit workspace? Your last save will be kept.")) window.location.href = "/employee/home";
+        }
+
+        // Boot
+        loadWork();
+    </script>
+</body>
+</html>

@@ -1,0 +1,2690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Command | MedData Enterprise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #0b0e14;
+            --bg-panel: #151b26;
+            --bg-card: #1c2333;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #2d3748;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+
+        /* --- GLOBAL SCROLLBAR --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+
+        body {
+            margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main);
+            height: 100vh; overflow: hidden; display: flex;
+        }
+
+        /* --- 1. FIXED SIDEBAR --- */
+        .sidebar {
+            width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; flex-shrink: 0; z-index: 50;
+            height: 100vh;
+        }
+
+        .brand-area {
+            padding: 25px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 12px;
+        }
+        .brand-icon {
+            width: 32px; height: 32px; background: transparent; border-radius: 6px;
+        }
+        .brand-text { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; color: white; }
+
+        .nav-menu { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .nav-item {
+            padding: 12px 16px; border-radius: 8px; color: var(--text-muted); cursor: pointer;
+            font-weight: 600; font-size: 0.9rem; transition: all 0.2s; display: flex; align-items: center; gap: 12px;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-item.active { background: rgba(59, 130, 246, 0.15); color: var(--primary); border-left: 3px solid var(--primary); }
+
+        .user-panel { padding: 20px; border-top: 1px solid var(--border); }
+        .logout-btn { color: var(--danger); background: none; border: none; font-weight: 700; cursor: pointer; width: 100%; text-align: left; padding: 10px 0; transition: 0.2s; }
+        .logout-btn:hover { opacity: 0.8; padding-left: 5px; }
+
+        /* --- USER MANAGEMENT ENHANCED --- */
+        /* User Management Logic moved to script */
+        .main-content {
+            flex: 1; overflow-y: auto; padding: 40px; position: relative;
+            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.05), transparent 40%);
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .title h1 { margin: 0; font-size: 1.8rem; font-weight: 700; }
+        .title p { margin: 5px 0 0; color: var(--text-muted); font-size: 0.9rem; }
+
+        /* --- 3. METRICS --- */
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .stat-card {
+            background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px;
+            position: relative; overflow: hidden;
+        }
+        .stat-card::after { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--primary); }
+        .stat-val { font-size: 2rem; font-weight: 700; margin: 10px 0; color: white; }
+        .stat-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; font-weight: 600; }
+
+        /* --- 4. TABLES --- */
+        .table-box {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .table-controls { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; }
+        .search-input { background: var(--bg-body); border: 1px solid var(--border); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; width: 300px; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 16px 24px; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; background: rgba(0,0,0,0.2); }
+        td { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 0.9rem; color: #e2e8f0; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .badge-blue { background: rgba(59, 130, 246, 0.15); color: var(--primary); }
+        .badge-warn { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+
+        /* --- ANIMATIONS --- */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeSlide { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 0.9rem; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { background: rgba(255,255,255,0.05); }
+        
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; margin-right: 5px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; }
+        .btn-action-blue { background: rgba(59, 130, 246, 0.1); color: var(--primary); border-color: rgba(59, 130, 246, 0.2); }
+        .btn-action-blue:hover { background: var(--primary); color: white; }
+        
+        .btn-action-red { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: rgba(239, 68, 68, 0.2); }
+        .btn-action-red:hover { background: var(--danger); color: white; }
+
+        .btn-action-green { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.2); }
+        .btn-action-green:hover { background: var(--success); color: white; }
+
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { opacity: 0.9; }
+
+        .btn-icon {
+            width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.05); color: var(--text-muted); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: 0.2s;
+        }
+        .btn-icon:hover { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-2px); }
+        
+        .btn-icon-red:hover { background: var(--danger); border-color: var(--danger); }
+        .btn-icon-green:hover { background: var(--success); border-color: var(--success); }
+
+        input, select, textarea {
+            background: var(--bg-body); border: 1px solid var(--border); padding: 10px; border-radius: 8px; color: white; width: 100%; box-sizing: border-box; font-family: inherit;
+        }
+
+        /* --- 6. MODALS --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+            z-index: 100; display: none; align-items: center; justify-content: center;
+        }
+        .modal {
+            background: #1e293b; width: 450px; border-radius: 16px; border: 1px solid var(--border);
+            padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: zoomIn 0.2s ease-out; position: relative;
+        }
+
+        /* Full Screen Editor Modal */
+        .modal-full {
+            width: 95vw; height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; background: #000;
+        }
+        .editor-container { display: flex; flex: 1; height: 100%; }
+        .editor-viewer { 
+            flex: 1; background: #000; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; cursor: grab;
+        }
+        .editor-viewer img { 
+            max-width: 95%; max-height: 95%; box-shadow: 0 0 30px rgba(0,0,0,0.5); transform-origin: center; transition: transform 0.1s ease-out; user-select: none;
+        }
+        .editor-form { width: 400px; background: var(--bg-panel); padding: 30px; display: flex; flex-direction: column; border-left: 1px solid var(--border); overflow-y: auto; }
+
+        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        #toast {
+            position: fixed; bottom: 30px; right: 30px; 
+            background: var(--success); color: #000;
+            padding: 15px 25px; border-radius: 10px; 
+            font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform: translateY(100px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; align-items: center; gap: 10px; z-index: 200;
+        }
+        #toast.show { transform: translateY(0); }
+
+
+        /* --- 7. DROP ZONE --- */
+        .drop-zone {
+            border: 2px dashed var(--border); background: rgba(255,255,255,0.02);
+            padding: 40px; text-align: center; border-radius: 12px; margin-bottom: 20px;
+            transition: 0.2s; cursor: pointer;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--primary); background: rgba(59, 130, 246, 0.1);
+        }
+        /* --- ANIMATIONS --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes ripple-effect { to { transform: scale(4); opacity: 0; } }
+        @keyframes pulse-soft { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        
+        .anim-row { animation: fadeIn 0.4s ease-out forwards; opacity: 0; }
+        
+        .ripple-btn { position: relative; overflow: hidden; transform: translate3d(0,0,0); }
+        .ripple-span {
+            position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.3);
+            transform: scale(0); animation: ripple-effect 0.6s linear; pointer-events: none;
+        }
+        /* --- RESPONSIVE SIDEBAR --- */
+        .burger-btn {
+            display: none; position: fixed; top: 15px; left: 15px; z-index: 200;
+            background: var(--bg-panel); border: 1px solid var(--border);
+            color: white; padding: 10px; border-radius: 8px; cursor: pointer;
+        }
+
+        @media (max-width: 900px) {
+            .sidebar { 
+                transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+                width: 280px; position: fixed; top: 0; left: 0; height: 100vh; 
+                box-shadow: 10px 0 30px rgba(0,0,0,0.5); 
+            }
+            .sidebar.active { transform: translateX(0); }
+            
+            /* Add backdrop when sidebar is active */
+            .sidebar-overlay { 
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 40; 
+                display: none; backdrop-filter: blur(2px);
+            }
+            .sidebar.active + .sidebar-overlay { display: block; }
+            
+            .main-content { margin-left: 0; padding: 20px; padding-top: 80px; }
+            
+            /* Hide default burger, we put it in mobile header */
+            .burger-btn { display: none; }
+            
+            /* Mobile Header */
+            .mobile-header {
+                display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+                background: var(--bg-panel); border-bottom: 1px solid var(--border);
+                align-items: center; padding: 0 15px; z-index: 45;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            }
+            .mobile-brand { font-weight: 800; color: white; font-size: 1.2rem; margin-left: 15px; }
+            
+            .stats-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .header button { width: 100%; }
+            .modal { width: 95%; max-width: 95%; padding: 20px; }
+            
+            .table-box { overflow-x: auto; display: block; }
+            table { min-width: 800px; } /* Force width to trigger scroll */
+        }
+
+        /* Custom Alert Modal */
+        .alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .alert-box { background: #1e293b; color: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 350px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.4); transform: scale(0.9); transition: 0.2s; }
+        .alert-box.show { transform: scale(1); }
+        .alert-icon { font-size: 3rem; margin-bottom: 15px; display: block; }
+        .alert-btn { background: var(--primary, #3b82f6); color: white; border: none; padding: 10px 25px; border-radius: 8px; font-weight: 600; margin-top: 20px; cursor: pointer; width: 100%; }
+
+        .tab-view { display: none; }
+        .tab-view:first-of-type { display: block; }
+        
+        .avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; }
+
+        /* --- SETTINGS TAB --- */
+        .settings-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; 
+            padding: 40px; max-width: 800px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .settings-header { margin-bottom: 30px; text-align: center; }
+        .settings-header h2 { font-size: 1.5rem; margin-bottom: 5px; color: white; margin-top:0;}
+        .settings-header p { color: var(--text-muted); margin:0; font-size: 0.95rem; }
+        
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 8px; font-weight: 600; letter-spacing: 0.5px; }
+        .form-group small { display: block; margin-top: 5px; color: rgba(255,255,255,0.3); font-size: 0.8rem; }
+        
+        .settings-actions { display: flex; justify-content: flex-end; gap: 15px; border-top: 1px solid var(--border); padding-top: 20px; margin-top: 10px; }
+        
+        @media (max-width: 700px) { .input-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+</head>
+<body>
+    <!-- Mobile Header (Visible only on mobile) -->
+    <div class="mobile-header" style="display:none;">
+        <button class="burger-btn-mobile" onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">☰</button>
+        <span class="mobile-brand">MED DATA</span>
+    </div>
+
+    <!-- Backdrop for Sidebar (Mobile) -->
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <script>
+        // Check window size to show/hide mobile header specific logic if needed
+        function checkMobile() {
+            const h = document.querySelector('.mobile-header');
+            if(window.innerWidth <= 900) h.style.display = 'flex';
+            else h.style.display = 'none';
+        }
+        window.addEventListener('resize', checkMobile);
+        window.addEventListener('load', checkMobile);
+    </script>
+
+    <div id="toast">✅ Action Completed Successfully</div>
+
+    <!-- Custom Alert HTML -->
+    <div id="customAlert" class="alert-overlay">
+        <div class="alert-box" id="alertBox">
+            <span class="alert-icon">⚠️</span>
+            <h3 id="alertTitle" style="margin:0 0 10px 0;">Notice</h3>
+            <p id="alertMsg" style="color: #94a3b8; margin:0; line-height: 1.5;">...</p>
+            <button class="alert-btn" onclick="closeCustomAlert()">OK</button>
+        </div>
+    </div>
+
+    <!-- User View/Edit Modal -->
+    <div id="userViewModal" class="modal-overlay">
+        <div class="modal" style="width: 800px; max-width:95%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:15px;">
+                <h2 style="margin:0; font-family:'Share Tech Mono'; color:var(--primary);">USER PROFILE</h2>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-outline" onclick="closeUserView()">Close</button>
+                </div>
+            </div>
+            
+            <div style="display:grid; grid-template-columns: 250px 1fr; gap:30px;">
+                <!-- Left: Avatar & Basic -->
+                <div style="text-align:center;">
+                    <img id="uvPic" src="/static/default-avatar.png" style="width:150px; height:150px; border-radius:50%; object-fit:cover; border:4px solid var(--glass-border); margin-bottom:15px;">
+                    <h3 id="uvName" style="margin:0; color:white;">User Name</h3>
+                    <div id="uvCode" style="color:var(--text-muted); font-size:0.9rem; margin-bottom:5px;">CODE</div>
+                    <div id="uvStatus" class="status-badge">STATUS</div>
+                    
+                    <div style="margin-top:20px; text-align:left; background:rgba(255,255,255,0.03); padding:15px; border-radius:10px;">
+                        <div style="color:var(--text-muted); font-size:0.8rem; font-weight:700;">WALLET BALANCE</div>
+                        <div id="uvWallet" style="font-size:1.5rem; color:#10b981; font-weight:700; margin-bottom:10px;">₹0.00</div>
+                        <div style="color:var(--text-muted); font-size:0.8rem; font-weight:700;">TOTAL EARNED</div>
+                        <div id="uvEarned" style="font-size:1.1rem; color:white;">₹0.00</div>
+                    </div>
+                </div>
+                
+                <!-- Right: Details Tabs -->
+                <div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+                         <div class="card" style="padding:15px;">
+                             <div style="color:var(--text-muted); font-size:0.8rem; font-weight:700; margin-bottom:5px;">CONTACT INFO</div>
+                             <div id="uvContact" style="font-size:0.9rem; line-height:1.6;"></div>
+                         </div>
+                         <div class="card" style="padding:15px;">
+                             <div style="color:var(--text-muted); font-size:0.8rem; font-weight:700; margin-bottom:5px;">ADDRESS</div>
+                             <div id="uvAddress" style="font-size:0.9rem; line-height:1.6;"></div>
+                         </div>
+                    </div>
+                    
+                    <div class="card" style="padding:15px; margin-bottom:20px;">
+                        <div style="color:var(--text-muted); font-size:0.8rem; font-weight:700; margin-bottom:5px;">BANK DETAILS</div>
+                        <div id="uvBank" style="font-size:0.95rem; line-height:1.6; font-family:monospace; color:#facc15;"></div>
+                    </div>
+                    
+                    <!-- KYC SECTION -->
+                    <div class="card" style="padding:15px; border:1px solid rgba(59, 130, 246, 0.3); background:rgba(59, 130, 246, 0.05);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <div style="color:var(--primary); font-size:0.9rem; font-weight:700;">KYC STATUS: <span id="uvKycStatus" style="color:white;">PENDING</span></div>
+                            <div id="uvKycActions" style="display:none; gap:10px;">
+                                <button class="btn" style="background:#ef4444; padding:5px 10px; font-size:0.8rem;" onclick="verifyKYC('REJECT')">Reject</button>
+                                <button class="btn" style="background:#10b981; padding:5px 10px; font-size:0.8rem;" onclick="verifyKYC('APPROVE')">Approve</button>
+                            </div>
+                        </div>
+                        
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div>
+                                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:5px;">AADHAR CARD</div>
+                                <a id="uvAadharLink" href="#" target="_blank">
+                                    <img id="uvAadhar" src="" style="width:100%; height:100px; object-fit:cover; border-radius:6px; border:1px solid var(--border); background:#000;">
+                                </a>
+                            </div>
+                            <div>
+                                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:5px;">PAN CARD</div>
+                                <a id="uvPanLink" href="#" target="_blank">
+                                    <img id="uvPan" src="" style="width:100%; height:100px; object-fit:cover; border-radius:6px; border:1px solid var(--border); background:#000;">
+                                </a>
+                            </div>
+                        </div>
+                        <div id="uvKycReason" style="color:#ef4444; font-size:0.85rem; margin-top:10px; display:none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div id="createUserModal" class="alert-overlay" style="display:none;">
+        <div class="alert-box" style="max-width:450px; padding:30px;">
+            <span style="font-size:2rem; display:block; text-align:center; margin-bottom:10px;">👤</span>
+            <h3 style="margin:0 0 20px 0; text-align:center; color:white;">Create New Employee</h3>
+            <div style="display:flex; flex-direction:column; gap:15px;">
+                <div>
+                    <label style="display:block; margin-bottom:5px; color:var(--text-muted); font-size:0.85rem;">Full Name *</label>
+                    <input id="newFullName" type="text" placeholder="e.g. John Doe" autocomplete="off" style="width:100%; padding:12px; background:var(--bg-body); border:1px solid var(--border); border-radius:8px; color:white; font-size:0.95rem;">
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:5px; color:var(--text-muted); font-size:0.85rem;">Password *</label>
+                    <input id="newPassword" type="password" placeholder="Minimum 4 characters" autocomplete="new-password" style="width:100%; padding:12px; background:var(--bg-body); border:1px solid var(--border); border-radius:8px; color:white; font-size:0.95rem;">
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:5px; color:var(--text-muted); font-size:0.85rem;">Gender *</label>
+                    <select id="newGender" style="width:100%; padding:12px; background:var(--bg-body); border:1px solid var(--border); border-radius:8px; color:white; font-size:0.95rem;">
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="O">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:5px; color:var(--text-muted); font-size:0.85rem;">Referral Code (Optional)</label>
+                    <input id="newReferral" type="text" placeholder="e.g. REF-ABC123" style="width:100%; padding:12px; background:var(--bg-body); border:1px solid var(--border); border-radius:8px; color:white; font-size:0.95rem;">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:25px;">
+                <button class="btn" style="flex:1; background:transparent; border:1px solid var(--border); color:var(--text-muted);" onclick="closeCreateUser()">Cancel</button>
+                <button class="btn btn-primary" style="flex:1;" onclick="submitNewEmployee()">Create Employee</button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="sidebar">
+        <div class="brand-area">
+            <canvas id="brandCanvas" class="brand-icon" width="32" height="32"></canvas>
+            <span class="brand-text">MED DATA</span>
+        </div>
+        <nav class="nav-menu">
+            <div class="nav-item active ripple-btn" onclick="switchTab('dashboard', this)"><span>📊</span> Dashboard</div>
+            <div class="nav-item ripple-btn" onclick="switchTab('users', this)"><span>👥</span> Users</div>
+            <div class="nav-item ripple-btn" onclick="switchTab('projects', this)"><span>📁</span> Batch Operations</div>
+            <div class="nav-item ripple-btn" onclick="switchTab('audit', this)"><span>🛡️</span> Audit Queue <span class="badge badge-warn" id="navAuditBadge" style="display:none; margin-left:auto;">0</span></div>
+            <div class="nav-item ripple-btn" onclick="switchTab('withdrawals', this)"><span>💰</span> Withdrawals <span class="badge badge-red" id="navPendingBadge" style="display:none; margin-left:auto;">0</span></div>
+            <div class="nav-item ripple-btn" onclick="switchTab('support', this)"><span>💬</span> Helpdesk <span class="badge badge-red" id="globalMsgBadge" style="display:none; margin-left:auto;">0</span></div>
+            <div class="nav-item ripple-btn" onclick="switchTab('leads', this)"><span>📫</span> Leads / Inquiries</div>
+            <div class="nav-item ripple-btn" onclick="switchTab('community', this)"><span>💬</span> Community <span class="badge badge-warn" id="pendingPostBadge" style="display:none; margin-left:auto;">0</span></div>
+            <div class="nav-item ripple-btn" onclick="switchTab('logs', this)"><span>🛡️</span> System Logs</div>
+            <div class="nav-item ripple-btn" onclick="switchTab('profile', this)"><span>⚙️</span> Website Settings</div>
+        </nav>
+        <div class="user-panel">
+            <button class="logout-btn" onclick="logout()">LOGOUT SESSION &rarr;</button>
+        </div>
+    </aside>
+    <!-- Overlay insertion point handled by CSS structure implicitly via sibling selector or fixed elements -->
+
+    <main class="main-content">
+        
+
+        
+        <!-- Audit Queue tab moved to line 436 with auditList card layout -->
+
+        <!-- LEADS / INQUIRIES TAB -->
+        <div id="tab-leads" class="tab-view" style="display:none;">
+            <div class="header">
+                <div class="title"><h1>Leads & Inquiries</h1><p>Business contacts from public form</p></div>
+                <button class="btn btn-primary" onclick="loadLeads()">↻ Refresh</button>
+            </div>
+            <div class="table-box">
+                <table>
+                    <thead><tr><th>Name</th><th>Email</th><th>Mobile</th><th>Message</th><th>Status</th><th>Date</th></tr></thead>
+                    <tbody id="leadsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- WEBSITE SETTINGS TAB -->
+
+        
+        <div id="tab-dashboard" class="tab-view">
+            <div class="header">
+                <div class="title"><h1>Command Center</h1><p>System performance metrics.</p></div>
+                <button class="btn btn-primary" onclick="loadAll()">↻ Refresh Data</button>
+            </div>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Pending Audits</div>
+                    <div class="stat-val" id="statPending">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Liability</div>
+                    <div class="stat-val" style="color:var(--primary);" id="statLiability">₹0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Users</div>
+                    <div class="stat-val" id="statUsers">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-users" class="tab-view" style="display: none;">
+            <div class="header">
+                <div class="title"><h1>Staff Management</h1><p>Manage access, wallets and permissions.</p></div>
+                <button class="btn btn-primary" style="width:auto; margin:0;" onclick="openCreateUser()">+ New Employee</button>
+            </div>
+            <div class="table-box">
+                <div class="table-controls">
+                    <input type="text" class="search-input" placeholder="Search staff..." onkeyup="filterTable('userTable', this.value)">
+                </div>
+                <table id="userTable">
+                    <thead><tr><th>Code</th><th>User</th><th>Rank</th><th>Status</th><th>Wallet</th><th style="text-align:right;">Actions</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-projects" class="tab-view" style="display: none;">
+            <div class="header">
+                <div class="title"><h1>Batch Operations</h1><p>Upload and assign work.</p></div>
+                <button class="btn btn-primary" onclick="openModal('uploadModal')">☁ Upload Batch</button>
+            </div>
+            <div class="table-box">
+                <div class="table-controls">
+                    <input type="text" class="search-input" placeholder="Search batches..." onkeyup="filterTable('projectTable', this.value)">
+                </div>
+                <table id="projectTable">
+                    <thead><tr><th>Batch ID</th><th>Assigned To</th><th>Status</th><th>Size</th><th style="text-align:right;">Actions</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-withdrawals" class="tab-view" style="display: none;">
+            <div class="header"><div class="title"><h1>Withdrawals</h1><p>Pending payout requests.</p></div></div>
+            <div class="table-box">
+                <table id="withdrawalTable">
+                    <thead><tr><th>ID</th><th>Employee</th><th>Amount</th><th>Date</th><th style="text-align:right;">Action</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-audit" class="tab-view" style="display: none;">
+            <div class="header">
+                <div class="title"><h1>Audit Queue</h1><p>Review completed work.</p></div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-action-green" onclick="bulkApprove()" id="bulkApproveBtn" style="display:none;">Approve Selected (<span id="selCount">0</span>)</button>
+                    <button class="btn btn-primary" onclick="downloadCSV()">Download CSV Report</button>
+                </div>
+            </div>
+            <div id="auditList"></div>
+        </div>
+
+        <div id="tab-support" class="tab-view" style="display: none; height: calc(100vh - 80px);">
+            <div class="chat-console">
+                <!-- Sidebar -->
+                <div class="chat-sidebar">
+                    <div class="chat-sidebar-header">
+                        <h3>Inbox</h3>
+                        <span class="badge" id="onlineCount" style="background:var(--success); color:#000;" onclick="toggleOnlineFilter()">0 Online</span>
+                    </div>
+                    <div style="padding: 10px 15px; border-bottom: 1px solid var(--border);">
+                        <input type="text" placeholder="Search employee..." 
+                               style="width:100%; background:var(--bg-body); border:1px solid var(--border); padding:8px 12px; border-radius:6px; color:white; font-size:0.9rem;"
+                               onkeyup="filterChatList(this.value)">
+                    </div>
+                    <div class="chat-list" id="chatList">
+                        <!-- Dynamic User Items -->
+                    </div>
+                </div>
+                
+                <!-- Chat Window -->
+                <div class="chat-window">
+                    <div class="chat-window-header" id="chatWinHeader">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="avatar-sm" id="activeChatAvatar">?</div>
+                            <div>
+                                <h3 style="margin:0;" id="activeChatName">Select a conversation</h3>
+                                <div style="font-size:0.8rem; color:var(--text-muted);" id="activeChatStatus">...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-messages" id="adminChatBody">
+                        <div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-muted);">
+                            Select a user from the sidebar to start chatting
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-row">
+                        <input type="text" id="adminChatInput" placeholder="Type a reply..." disabled>
+                        <button class="btn btn-primary" onclick="sendAdminMsg()" id="adminSendBtn" disabled>Send</button>
+                    </div>
+                </div>
+            </div>
+            
+            <style>
+                .chat-console { display: flex; height: 100%; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: #0f172a; }
+                
+                .chat-sidebar { width: 300px; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: rgba(30, 41, 59, 0.5); }
+                .chat-sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+                .chat-list { flex: 1; overflow-y: auto; }
+                
+                .chat-user-item { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 12px; }
+                .chat-user-item:hover, .chat-user-item.active { background: rgba(56, 189, 248, 0.1); border-left: 3px solid var(--primary); }
+                .chat-user-info h4 { margin: 0; font-size: 0.95rem; color: white; }
+                .chat-user-info p { margin: 2px 0 0; font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+                .online-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; border: 2px solid #0f172a; position: absolute; bottom: 0; right: 0; }
+                
+                .chat-window { flex: 1; display: flex; flex-direction: column; background: #0f172a; }
+                .chat-window-header { padding: 15px 25px; border-bottom: 1px solid var(--border); background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); }
+                .chat-messages { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+                
+                .chat-input-row { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 15px; background: rgba(30, 41, 59, 0.3); }
+                #adminChatInput { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 12px 20px; border-radius: 20px; color: white; }
+                
+                .msg-bubble { max-width: 60%; padding: 12px 18px; border-radius: 12px; font-size: 0.95rem; line-height: 1.5; position: relative; }
+                .msg-in { background: #334155; align-self: flex-start; border-bottom-left-radius: 2px; }
+                .msg-out { background: var(--primary); color: #0f172a; align-self: flex-end; border-bottom-right-radius: 2px; font-weight: 500; }
+                
+                .avatar-sm { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; position: relative; }
+            </style>
+        </div>
+
+        <!-- COMMUNITY TAB -->
+        <div id="tab-community" class="tab-view" style="display: none;">
+            <div class="header">
+                <div class="title"><h1>Community Moderation</h1></div>
+                <button class="btn btn-primary" onclick="loadCommunityMod()">Refresh Pending</button>
+            </div>
+            
+            <div id="pendingPostsList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap:20px;">
+                <!-- Pending Posts Here -->
+            </div>
+        </div>
+
+        <!-- LOGS TAB -->
+        <div id="tab-logs" class="tab-view" style="display: none;">
+            <div class="header">
+                <div class="title"><h1>System Security Logs</h1></div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-outline" onclick="loadLogs('SESSION')">Session Logs</button>
+                    <button class="btn btn-primary" onclick="loadLogs()">Refresh All</button>
+                </div>
+            </div>
+            
+            <div class="table-box">
+                <table id="logsTable">
+                    <thead>
+                        <tr>
+                            <th>TIMESTAMP</th>
+                            <th>ACTION</th>
+                            <th>USER</th>
+                            <th>DETAILS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditLogsBody">
+                        <tr><td colspan="4" style="text-align:center;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    <!-- SETTINGS TAB (New Design) -->
+    <div id="tab-profile" class="tab-view" style="display: none;">
+        <div class="anim-row">
+            <div class="settings-card">
+                <div class="settings-header">
+                    <h2>Website Settings</h2>
+                    <p>Configure your brand identity and contact information globally.</p>
+                </div>
+                
+                <div class="input-grid">
+                    <div class="form-group">
+                        <label>BRAND NAME</label>
+                        <input type="text" id="sysName" placeholder="e.g. MedData Enterprise">
+                        <small>Replaces the logo text across the platform.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>SUPPORT CONTACT (WHATSAPP)</label>
+                        <input type="text" id="sysMobile" placeholder="e.g. 919876543210">
+                        <small>Must include country code (no +).</small>
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 30px;">
+                    <label>OFFICE ADDRESS</label>
+                    <input type="text" id="sysAddress" placeholder="e.g. 123 Tech Park, Innovation City, NY 10001">
+                    <small>Displayed on the login page footer.</small>
+                </div>
+
+                <div class="settings-actions">
+                    <button class="btn" style="background:transparent; color:var(--text-muted);" onclick="loadSystemConfig()">Revert</button>
+                    <button class="btn btn-primary ripple-btn" onclick="saveSystemProfile()">💾 Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ASSIGN MODAL -->
+    <div id="assignModal" class="modal-overlay">
+        <div class="modal">
+            <h2 style="margin-top:0">Assign Batch</h2>
+            <p id="assignTarget" style="color:var(--primary); margin-bottom:20px; font-weight:700;"></p>
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:5px; color:var(--text-muted); font-size:0.8rem;">Select Batch</label>
+                <select id="batchSelect"></select>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                <div><label style="display:block; margin-bottom:5px; color:var(--text-muted); font-size:0.8rem;">Rate (₹)</label><input type="number" id="assignSalary" value="10"></div>
+                <div><label style="display:block; margin-bottom:5px; color:var(--text-muted); font-size:0.8rem;">Security (₹)</label><input type="number" id="assignSecurity" value="1000"></div>
+            </div>
+            
+            <div style="margin-bottom:20px;">
+                <label style="display:block; margin-bottom:5px; color:var(--text-muted); font-size:0.8rem;">Time Limit</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="number" id="assignDuration" value="2" style="flex:1;">
+                    <select id="assignUnit" style="flex:1; background:#111; color:white; border:1px solid #333; height:40px; padding:0 10px; border-radius:4px;">
+                        <option value="min">Minutes</option>
+                        <option value="hr" selected>Hours</option>
+                        <option value="day">Days</option>
+                    </select>
+                </div>
+            </div>
+            <div style="text-align:right;">
+                <button class="btn" style="background:transparent; color:var(--text-muted);" onclick="closeModals()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmAssign()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Old create user modal removed - using new modal at top of body with full_name field -->
+
+    <!-- UPLOAD MODAL -->
+    <!-- UPLOAD MODAL (Re-styled) -->
+    <div id="uploadModal" class="modal-overlay">
+        <div class="modal">
+            <h2 style="margin-top:0; margin-bottom:5px;">Upload Batch</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">Upload medical records for transcription.</p>
+            
+            <div id="dropZone" class="drop-zone">
+                <div style="font-size:2rem; margin-bottom:10px;">☁️</div>
+                <div style="font-weight:600; margin-bottom:5px;">Drag & Drop files here</div>
+                <div style="font-size:0.8rem; color:var(--text-muted);">or click to browse</div>
+                <input type="file" id="fileInput" multiple style="display:none;" onchange="handleFileSelect(this)">
+            </div>
+            
+            <div id="fileList" style="margin-bottom:20px; max-height:100px; overflow-y:auto; font-size:0.85rem; color:var(--text-muted);">
+                <!-- Selected files info will appear here -->
+            </div>
+
+            <div style="text-align:right;">
+                <button class="btn" style="background:transparent; color:var(--text-muted); margin-right:10px;" onclick="closeModals()">Cancel</button>
+                <div style="display:inline-block; position:relative;">
+                    <button id="btnUpload" class="btn btn-primary" onclick="uploadBatch()" disabled style="opacity:0.5; cursor:not-allowed;">Start Upload</button>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- POST REJECT MODAL -->
+    <div id="postRejectModal" class="modal-overlay">
+        <div class="modal">
+            <h2 style="margin-top:0;">Reject Post</h2>
+            <p style="color:var(--text-muted);">Provide a reason for rejection. This will be visible to the user.</p>
+            <textarea id="rejectReason" style="width:100%; height:80px; background:#111; color:white; padding:10px; border:1px solid var(--border); border-radius:6px; resize:none; margin-bottom:15px;" placeholder="e.g. Inappropriate content..."></textarea>
+            <div style="text-align:right;">
+                <button class="btn" onclick="closeModals()" style="background:transparent; color:var(--text-muted);">Cancel</button>
+                <button class="btn btn-primary" style="background:var(--danger); border:none;" onclick="confirmReject()">Reject Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- USER VIEW MODAL -->
+    <div id="userViewModal" class="modal-overlay" style="display:none;">
+        <div class="modal" style="width:600px; max-width:90%;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+                <div style="display:flex; gap:20px; align-items:center;">
+                    <img id="uvPic" src="/static/default-avatar.png" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid var(--primary);">
+                    <div>
+                        <h2 id="uvName" style="margin:0; font-size:1.4rem; color:white;">User Name</h2>
+                        <p id="uvCode" style="margin:5px 0 0; color:var(--text-muted); font-family:monospace; font-size:0.85rem;">ID</p>
+                        <span id="uvStatus" class="badge badge-green">ACTIVE</span>
+                    </div>
+                </div>
+                <button onclick="closeUserView()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            
+            <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; margin-bottom:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="color:var(--text-muted); font-size:0.85rem;">WALLET BALANCE</span>
+                    <span id="uvWallet" style="font-size:1.5rem; font-weight:700; color:var(--success);">₹0</span>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
+                <div>
+                    <h4 style="margin:0 0 10px 0; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Contact Info</h4>
+                    <div id="uvContact" style="color:#e2e8f0; font-size:0.9rem; line-height:1.8;">No contact info</div>
+                </div>
+                <div>
+                    <h4 style="margin:0 0 10px 0; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Address</h4>
+                    <div id="uvAddress" style="color:#e2e8f0; font-size:0.9rem; line-height:1.8;">No address</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <h4 style="margin:0 0 10px 0; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Bank Details</h4>
+                <div id="uvBank" style="color:#e2e8f0; font-size:0.9rem; line-height:1.8; font-family:monospace;">No bank details</div>
+            </div>
+
+            <div style="border-top:1px solid var(--border); padding-top:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h4 style="margin:0; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">KYC Verification</h4>
+                    <span id="uvKycStatus" style="font-weight:700;">NOT UPLOADED</span>
+                </div>
+                <div id="uvKycReason" style="background:rgba(239,68,68,0.1); color:#ef4444; padding:10px; border-radius:6px; margin-bottom:15px; display:none;"></div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                    <div>
+                        <p style="color:var(--text-muted); font-size:0.75rem; margin:0 0 5px;">AADHAR CARD</p>
+                        <a id="uvAadharLink" href="#" target="_blank"><img id="uvAadhar" src="" style="width:100%; border-radius:8px; border:1px solid var(--border); display:none; max-height:120px; object-fit:cover;"></a>
+                    </div>
+                    <div>
+                        <p style="color:var(--text-muted); font-size:0.75rem; margin:0 0 5px;">PAN CARD</p>
+                        <a id="uvPanLink" href="#" target="_blank"><img id="uvPan" src="" style="width:100%; border-radius:8px; border:1px solid var(--border); display:none; max-height:120px; object-fit:cover;"></a>
+                    </div>
+                </div>
+
+                <div id="uvKycActions" style="display:none; gap:10px;">
+                    <button class="btn btn-primary" style="flex:1; background:var(--success);" onclick="verifyKYC('APPROVE')">✓ Approve KYC</button>
+                    <button class="btn btn-outline" style="flex:1; border-color:var(--danger); color:var(--danger);" onclick="verifyKYC('REJECT')">✕ Reject KYC</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REVIEW / EDITOR MODAL (NEW) -->
+    <div id="reviewModal" class="modal-overlay">
+        <div class="modal modal-full">
+            <div class="header" style="margin: 0; padding: 15px 30px; background: #0f172a; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:20px;">
+                    <h3 style="margin:0; color:white; font-size:1.1rem;">Review Batch</h3>
+                    <div style="background:rgba(0,0,0,0.3); padding:4px 10px; border-radius:8px; display:flex; align-items:center; gap:10px; border:1px solid var(--border);">
+                         <button class="btn-sm btn-action-blue" style="margin:0;" onclick="navigateReview(-1)">◀</button>
+                         <span id="reviewCounter" style="color:white; font-family:monospace; font-weight:700; font-size:0.9rem; min-width: 60px; text-align:center;">-- / --</span>
+                         <button class="btn-sm btn-action-blue" style="margin:0;" onclick="navigateReview(1)">▶</button>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-primary" onclick="saveCurrentEdit()">💾 Save Changes</button>
+                    <button class="btn" style="background:transparent; border:1px solid var(--border); color:white;" onclick="closeModals()">✕ Close</button>
+                </div>
+            </div>
+            
+            <div class="editor-container">
+                <div class="editor-viewer">
+                    <img id="reviewImage" src="">
+                </div>
+                <div class="editor-form">
+                    <h3 style="margin-top:0; color:var(--primary);">Data Entry</h3>
+                    <div style="margin-bottom:20px;">
+                        <label style="display:block; margin-bottom:5px; color:var(--text-muted); font-size:0.8rem;">PATIENT NAME</label>
+                        <input type="text" id="reviewName" style="background:#111;">
+                    </div>
+                    <div style="flex:1; display:flex; flex-direction:column;">
+                        <label style="display:block; margin-bottom:5px; color:var(--text-muted); font-size:0.8rem;">CLINICAL NOTES</label>
+                        <textarea id="reviewNotes" style="flex:1; background:#111; resize:none;"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- AUTH & SECURE FETCH ---
+        function getAuthHeader() {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = '/'; return {}; }
+            return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+        }
+
+        async function fetchSecure(url, options = {}) {
+            const headers = getAuthHeader();
+            if (options.body instanceof FormData) delete headers['Content-Type'];
+            options.headers = { ...headers, ...options.headers };
+            try {
+                const res = await fetch(url, options);
+                if (res.status === 401 || res.status === 403) { logout(); return null; }
+                return res;
+            } catch(e) { console.error(e); return null; }
+        }
+
+        // --- DATA LOADING ---
+        let users = [], projects = [];
+        let selectedUserId = null;
+        
+        // Review State
+        let reviewData = [];
+        let currentReviewIndex = 0;
+        let currentReviewImageId = null;
+
+        // --- CHAT LOGIC ---
+        let adminWs = null;
+        let chatUsers = {}; // userId -> { username, messages: [], online: false, unread: 0 }
+        let chatFilter = "";
+        
+        function filterChatList(val) {
+            chatFilter = val.toLowerCase();
+            renderChatList();
+        }
+
+        let activeChatUserId = null;
+
+        function initAdminChat() {
+            if(adminWs) return;
+            const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            adminWs = new WebSocket(`${protocol}://${window.location.host}/ws/chat/admin/${currentAdminId}`); // Assuming admin ID is handled or just 'admin'
+            
+            adminWs.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log("Admin WS Received:", data);
+                handleWsMessage(data);
+            };
+        }
+        
+        // Hardcoded admin ID mostly for connection param
+        const currentAdminId = "admin-sys"; 
+
+        function handleWsMessage(data) {
+            const userId = data.user_id;
+            
+            // Ensure user entry exists
+            if(!chatUsers[userId]) {
+                const u = users.find(x => x.id === userId);
+                chatUsers[userId] = { 
+                    username: data.username || (u ? u.username : 'Unknown'), 
+                    messages: [], 
+                    online: false, 
+                    unread: 0,
+                    id: userId
+                };
+            }
+            
+            const user = chatUsers[userId];
+            
+            if(data.type === 'message') {
+                user.messages.push({ sender: 'user', content: data.content, time: data.timestamp });
+                if(activeChatUserId !== userId) {
+                    user.unread++;
+                    showToast(`New message from ${user.username}`);
+                    updateGlobalBadge();
+                } else {
+                    renderChatMessages(userId);
+                }
+                renderChatList();
+            } else if (data.type === 'status') {
+                user.online = (data.status === 'online');
+                renderChatList();
+                if(activeChatUserId === userId) updateHeaderStatus(user);
+            }
+        }
+
+        let onlineFilterActive = false;
+
+        function toggleOnlineFilter() {
+            onlineFilterActive = !onlineFilterActive;
+            const badge = document.getElementById('onlineCount');
+            
+            if(onlineFilterActive) {
+                badge.classList.add('active-filter');
+                badge.innerHTML = `${Object.values(chatUsers).filter(u=>u.online).length} Online (Filtered)`;
+            } else {
+                badge.classList.remove('active-filter');
+                // renderChatList will update text
+            }
+            renderChatList();
+        }
+
+        function renderChatList() {
+            const list = document.getElementById('chatList');
+            let sorted = Object.values(chatUsers).sort((a,b) => {
+                const tA = a.messages.length ? new Date(a.messages[a.messages.length-1].time) : 0;
+                const tB = b.messages.length ? new Date(b.messages[b.messages.length-1].time) : 0;
+                return tB - tA;
+            });
+
+            if(chatFilter) {
+                sorted = sorted.filter(u => u.username.toLowerCase().includes(chatFilter) || u.id.toLowerCase().includes(chatFilter));
+            }
+            
+            // Online Filter
+            if(onlineFilterActive) {
+                sorted = sorted.filter(u => u.online);
+            }
+            
+            list.innerHTML = sorted.map(u => `
+                <div class="chat-user-item ${activeChatUserId===u.id?'active':''}" onclick="selectChat('${u.id}')">
+                    <div class="avatar-sm">
+                        ${u.username[0].toUpperCase()}
+                        ${u.online ? '<div class="online-dot"></div>' : ''}
+                    </div>
+                    <div class="chat-user-info">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h4>${u.username} ${u.unread > 0 ? `<span class="badge" style="background:var(--primary); margin-left:5px;">${u.unread}</span>` : ''}</h4>
+                            <small style="color:var(--text-muted); font-size:0.7em; background:rgba(255,255,255,0.05); padding:2px 4px; border-radius:4px;">ID: ${u.id.substring(0,8)}</small>
+                        </div>
+                        <p>${u.messages.length ? u.messages[u.messages.length-1].content : 'No messages yet'}</p>
+                    </div>
+                </div>
+            `).join('');
+            
+            const onlineCount = Object.values(chatUsers).filter(u => u.online).length;
+            const badge = document.getElementById('onlineCount');
+            if(!onlineFilterActive) badge.innerText = `${onlineCount} Online`;
+            else badge.innerText = `${onlineCount} Online (Filtered)`;
+        }
+
+        function selectChat(userId) {
+            activeChatUserId = userId;
+            chatUsers[userId].unread = 0;
+            renderChatList();
+            updateGlobalBadge();
+            
+            const u = chatUsers[userId];
+            document.getElementById('activeChatName').innerText = u.username;
+            document.getElementById('activeChatAvatar').innerHTML = u.username[0].toUpperCase();
+            updateHeaderStatus(u);
+            
+            renderChatMessages(userId);
+            
+            document.getElementById('adminChatInput').disabled = false;
+            document.getElementById('adminSendBtn').disabled = false;
+        }
+
+        function updateGlobalBadge() {
+            const badge = document.getElementById('globalMsgBadge');
+            let total = 0;
+            Object.values(chatUsers).forEach(u => total += u.unread);
+            
+            badge.innerText = total;
+            badge.style.display = total > 0 ? 'inline-block' : 'none';
+        }
+        
+        function updateHeaderStatus(u) {
+            document.getElementById('activeChatStatus').innerText = u.online ? 'Online' : 'Offline';
+            document.getElementById('activeChatStatus').style.color = u.online ? 'var(--success)' : 'var(--text-muted)';
+        }
+
+        function renderChatMessages(userId) {
+            const msgs = chatUsers[userId].messages;
+            const container = document.getElementById('adminChatBody');
+            
+            container.innerHTML = msgs.map(m => `
+                <div class="msg-bubble ${m.sender==='admin'?'msg-out':'msg-in'}">
+                    ${m.content}
+                </div>
+            `).join('');
+            
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendAdminMsg() {
+            if(!activeChatUserId || !adminWs) return;
+            const input = document.getElementById('adminChatInput');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            // Send via WS
+            adminWs.send(JSON.stringify({ 
+                type: 'message', 
+                target_user_id: activeChatUserId, 
+                content: text 
+            }));
+            
+            // Optimistic Update
+            // chatUsers[activeChatUserId].messages.push({ sender: 'admin', content: text, time: new Date() });
+            // Wait for WS echo/confirmation? Our backend doesn't echo to sender yet? 
+            // Wait, we implemented 'save to db' but not echo back to admin.
+            // So optimistic update is good.
+            chatUsers[activeChatUserId].messages.push({ sender: 'admin', content: text, time: new Date() });
+            renderChatMessages(activeChatUserId);
+            input.value = "";
+        }
+
+        // Add Enter Key Listener
+        document.getElementById('adminChatInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendAdminMsg();
+            }
+        });
+
+        function initChatData() {
+            // Pre-fill from existing user list but preserve existing chat data
+            users.forEach(u => {
+                if(u.username !== 'Admin') {
+                   // Only create if not exists
+                   if(!chatUsers[u.id]) {
+                       chatUsers[u.id] = { username: u.username, messages: [], online: false, unread: 0, id: u.id };
+                   }
+                }
+            });
+            
+            // Initial fetch of messages for admin (optional, if we want history)
+            // But we already have websocket to receive new ones. 
+            // Ideally we fetch all history once.
+            if(Object.keys(chatUsers).length > 0 && !window.historyLoaded) {
+                 fetchSecure('/api/admin/support/messages').then(res => res.json()).then(msgs => {
+                     msgs.forEach(m => {
+                         if(chatUsers[m.user_id]) {
+                             const sender = m.is_from_admin ? 'admin' : 'user';
+                             chatUsers[m.user_id].messages.push({ sender: sender, content: m.message, time: m.timestamp });
+                         }
+                     });
+                     window.historyLoaded = true;
+                     renderChatList();
+                 });
+            }
+            renderChatList();
+            initAdminChat();
+        }
+
+        async function loadAll() {
+            try {
+                const [uRes, pRes, sRes, wRes, aRes, lRes] = await Promise.all([
+                    fetchSecure('/api/employees/list'),
+                    fetchSecure('/api/projects/list'),
+                    fetchSecure('/api/admin/stats'),
+                    fetchSecure('/api/withdrawals/pending'),
+                    fetchSecure('/api/admin/finalized-projects'),
+                    fetchSecure('/api/admin/contacts')
+                ]);
+
+                if(!uRes) return;
+
+                users = await uRes.json();
+                projects = await pRes.json();
+                const stats = await sRes.json();
+                const withdrawals = await wRes.json();
+                const audits = await aRes.json();
+                const leads = lRes && lRes.ok ? await lRes.json() : [];
+
+                // Stats with Animation
+                const pVal = stats.pending_audit;
+                const uVal = stats.total_users;
+                
+                // Only animate if value changed or first load (simplified by always calling for now)
+                animateValue(document.getElementById('statPending'), 0, pVal, 1000);
+                document.getElementById('statLiability').innerText = `₹${stats.total_payout_liability.toFixed(2)}`;
+                animateValue(document.getElementById('statUsers'), 0, uVal, 1000);
+
+                // Render all tables
+                renderUsers();
+                renderProjects();
+                renderWithdrawals(withdrawals);
+                renderAudits(audits);
+                renderLeadsTable(leads);
+                
+                // Update badges
+                const pendingBadge = document.getElementById('navPendingBadge');
+                if(pendingBadge) {
+                    pendingBadge.innerText = withdrawals.length;
+                    pendingBadge.style.display = withdrawals.length > 0 ? 'inline-block' : 'none';
+                }
+                const auditBadge = document.getElementById('navAuditBadge');
+                if(auditBadge) {
+                    auditBadge.innerText = audits.length;
+                    auditBadge.style.display = audits.length > 0 ? 'inline-block' : 'none';
+                }
+
+                // Initialize chat
+                initChatData();
+            } catch(e) {
+                console.error("loadAll error:", e);
+            }
+        }
+
+        function renderUsers() {
+            const tbody = document.querySelector('#userTable tbody');
+            tbody.innerHTML = users.filter(u => u.username !== 'Admin').map((u, index) => `
+                <tr class="anim-row" style="animation-delay: ${index * 0.05}s">
+                    <td style="font-family:monospace; color:var(--text-muted);">${u.code}</td>
+                    <td>
+                        <div style="font-weight:700; color:white; cursor:pointer;" onclick="viewUser('${u.id}')">${u.username}</div>
+                        <small style="color:var(--text-muted); font-size:0.75rem;">${u.full_name || ''}</small>
+                    </td>
+                    <td><span class="badge" style="background:#0f172a; border:1px solid var(--border); color:#94a3b8; white-space:nowrap;">Lvl ${u.level||1}</span></td>
+                    <td>
+                        <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
+                            <span class="badge ${u.status==='ACTIVE'?'badge-green':'badge-red'}">${u.status}</span>
+                            ${u.kyc_status === 'PENDING' ? '<span class="badge" style="background:rgba(234, 179, 8, 0.2); color:#eab308; border:1px solid rgba(234, 179, 8, 0.5);">KYC PENDING</span>' : ''}
+                            ${u.kyc_status === 'APPROVED' ? '<span class="badge" style="background:rgba(16, 185, 129, 0.2); color:#10b981; border:1px solid rgba(16, 185, 129, 0.5);">VERIFIED</span>' : ''}
+                            ${u.kyc_status === 'REJECTED' ? '<span class="badge" style="background:rgba(239, 68, 68, 0.2); color:#ef4444; border:1px solid rgba(239, 68, 68, 0.5);">REJECTED</span>' : ''}
+                        </div>
+                    </td>
+                    <td>₹${u.wallet.toFixed(2)}</td>
+                    <td>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                            <button class="btn-icon" onclick="openAssign('${u.id}', '${u.username}')" title="Assign Work">👤</button>
+                            ${u.status==='ACTIVE' 
+                                ? `<button class="btn-icon btn-icon-red" onclick="manageUser('${u.id}', 'BAN')" title="Ban User">🚫</button>`
+                                : `<button class="btn-icon btn-icon-green" onclick="manageUser('${u.id}', 'ACTIVATE')" title="Activate User">✅</button>`}
+                            <button class="btn-icon" onclick="resetPass('${u.id}')" title="Reset Key">🔑</button>
+                            <button class="btn-icon" onclick="viewUser('${u.id}')" title="View Profile">👁️</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        function animateValue(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const val = Math.floor(progress * (end - start) + start);
+                obj.innerHTML = (typeof end === 'number' && end % 1 !== 0) ? val : val; // Simplistic integer animation
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    obj.innerHTML = end; // Ensure final value
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function renderProjects() {
+            document.querySelector('#projectTable tbody').innerHTML = projects.map((p, index) => {
+                let badge = '<span class="badge badge-blue">ACTIVE</span>';
+                if(p.is_approved) badge = '<span class="badge badge-green">APPROVED</span>';
+                else if(p.status === 'REJECTED') badge = '<span class="badge badge-red">REJECTED</span>';
+                else if(p.is_finalized) badge = '<span class="badge badge-warn">REVIEW</span>';
+
+                return `
+                <tr class="anim-row" style="animation-delay: ${index * 0.05}s">
+                    <td style="font-family:monospace;">${p.id.split('-')[1]}</td>
+                    <td>${p.assigned_to}</td>
+                    <td>${badge}</td>
+                    <td>${p.image_count}</td>
+                    <td style="text-align:right;"><button class="btn-sm btn-action-red ripple-btn" onclick="deleteProject('${p.id}')">Delete</button></td>
+                </tr>
+            `}).join('');
+        }
+
+        function renderWithdrawals(list) {
+            document.querySelector('#withdrawalTable tbody').innerHTML = list.length ? list.map((w, index) => `
+                <tr class="anim-row" style="animation-delay: ${index * 0.05}s">
+                    <td style="font-family:monospace;">${w.id.substring(0,6)}</td>
+                    <td style="font-weight:700;">
+                        ${w.employee_name}
+                        ${w.is_instant ? '<span class="badge badge-warn" style="font-size:0.7em; margin-left:5px;">⚡ INSTANT</span>' : ''}
+                    </td>
+                    <td style="color:var(--success); font-weight:700;">₹${w.amount.toFixed(2)}</td>
+                    <td>${new Date(w.requested_at).toLocaleDateString()}</td>
+                    <td style="text-align:right;">
+                        <button class="btn-sm btn-action-green ripple-btn" onclick="processWithdrawal('${w.id}', true)">Approve</button>
+                        <button class="btn-sm btn-action-red ripple-btn" onclick="processWithdrawal('${w.id}', false)">Reject</button>
+                    </td>
+                </tr>
+            `).join('') : "<tr><td colspan='5' style='text-align:center; padding:30px; color:var(--text-muted);'>No pending requests</td></tr>";
+        }
+
+        function renderAudits(list) {
+            const container = document.getElementById('auditList');
+            if(!list.length) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:100px 20px; color:var(--text-muted); display:flex; flex-direction:column; align-items:center;">
+                        <div style="font-size:3rem; margin-bottom:15px; opacity:0.5;">✅</div>
+                        <h3 style="color:white; margin:0;">All Caught Up</h3>
+                        <p>No batches pending audit at this time.</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap:25px;">
+                    ${list.map(p => {
+                        const shortId = p.id.split('-')[1] || p.id;
+                        const progress = Math.round((p.completed_count / p.image_count) * 100);
+                        
+                        return `
+                        <div class="card" style="padding:0; overflow:hidden; border:1px solid var(--border); box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                            <!-- Header -->
+                            <div style="padding:20px; background:rgba(30, 41, 59, 0.5); border-bottom:1px solid var(--border);">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <div style="display:flex; gap:12px; align-items:center;">
+                                        <div class="avatar-sm" style="background:#6366f1;">${p.employee_name[0].toUpperCase()}</div>
+                                        <div>
+                                            <div style="color:white; font-weight:600;">${p.employee_name}</div>
+                                            <div style="color:var(--text-muted); font-size:0.8rem; font-family:monospace;">ID: ${p.employee_id || '?'}</div>
+                                        </div>
+                                    </div>
+                                    <div style="text-align:right;">
+                                         <span class="badge badge-warn" style="margin-bottom:5px; display:inline-block;">Ready for Review</span>
+                                         <div style="font-family:monospace; color:var(--text-muted); font-size:0.8rem;">#${shortId}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Body -->
+                            <div style="padding:20px;">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:15px;">
+                                    <div>
+                                        <div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Total Payout</div>
+                                        <div style="font-size:2rem; font-weight:700; color:white;">₹${p.total_due.toFixed(2)}</div>
+                                    </div>
+                                    <div style="text-align:right;">
+                                        <div style="font-size:0.9rem; color:var(--text-muted);">${p.completed_count} / ${p.image_count} Images</div>
+                                        <div style="display:flex; gap:10px; font-size:0.8rem; margin-top:5px; color:#94a3b8;">
+                                            <span>Rate: ₹${p.rate}</span>
+                                            <span>•</span>
+                                            <span>Bonus: ₹${p.security}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden; margin-bottom:20px;">
+                                    <div style="width:${progress}%; height:100%; background:var(--success);"></div>
+                                </div>
+                                
+                                <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; border:1px solid var(--border); margin-bottom:20px;">
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                         <input type="checkbox" class="audit-check" value="${p.id}" onchange="updateBulkUI()" style="width:18px; height:18px; cursor:pointer;">
+                                         <span style="font-size:0.9rem; color:var(--text-muted);">Select for bulk action</span>
+                                    </div>
+                                </div>
+
+                                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+                                    <button class="btn btn-outline" style="border-color:rgba(255,255,255,0.2); color:white;" onclick="openReviewModal('${p.id}')">
+                                        🔍 Review Work
+                                    </button>
+                                    <button class="btn btn-outline-danger" style="border-color:rgba(239,68,68,0.5); color:#ef4444;" onclick="rejectProject('${p.id}')">
+                                        ✕ Reject
+                                    </button>
+                                    <button class="btn btn-primary" style="background:var(--success); border:none;" onclick="approvePayout('${p.id}')">
+                                        ✓ Approve
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // Render Audit Queue Table (for tab-audit)
+        function renderAuditTable(audits) {
+            const tbody = document.getElementById('auditTableBody');
+            if (!tbody) return;
+            
+            if (!audits || audits.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-muted);">No projects pending review</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = audits.map(p => `
+                <tr>
+                    <td style="font-family:monospace;">${p.id.substring(0, 8)}...</td>
+                    <td>${p.employee_name}</td>
+                    <td>${p.image_count}</td>
+                    <td style="font-weight:700; color:var(--success);">₹${p.total_due.toFixed(2)}</td>
+                    <td>
+                        <button class="btn-sm btn-action-blue" onclick="openReviewModal('${p.id}')">Review</button>
+                        <button class="btn-sm btn-action-green" onclick="approvePayout('${p.id}')">Approve</button>
+                        <button class="btn-sm btn-action-red" onclick="rejectPayout('${p.id}')">Reject</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Render Leads Table (for tab-leads)
+        function renderLeadsTable(leads) {
+            const tbody = document.getElementById('leadsTableBody');
+            if (!tbody) return;
+            
+            if (!leads || leads.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-muted);">No inquiries yet</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = leads.map((lead, index) => `
+                <tr class="anim-row" style="animation-delay: ${index * 0.05}s">
+                    <td style="font-weight:600;">${lead.name}</td>
+                    <td>${lead.email}</td>
+                    <td>${lead.mobile}</td>
+                    <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${lead.message || '-'}</td>
+                    <td><span class="badge ${lead.status === 'NEW' ? 'badge-warn' : 'badge-blue'}">${lead.status}</span></td>
+                    <td style="color:var(--text-muted); font-size:0.85rem;">${new Date(lead.submitted_at).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Load leads data independently (for refresh button)
+        async function loadLeads() {
+            try {
+                const res = await fetchSecure('/api/admin/contacts');
+                if (res && res.ok) {
+                    const leads = await res.json();
+                    renderLeadsTable(leads);
+                    showToast('Leads refreshed');
+                }
+            } catch (error) {
+                console.error('Error loading leads:', error);
+            }
+        }
+
+        // --- REVIEW LOGIC ---
+        async function openReviewModal(projectId) {
+            const res = await fetchSecure(`/api/admin/project-submissions/${projectId}`);
+            if(!res || !res.ok) return alert("Failed to fetch data");
+            
+            currentReviewImages = await res.json();
+            if(currentReviewImages.length === 0) return alert("No images in this batch.");
+            
+            rIndex = 0;
+            loadReviewIndex(rIndex);
+            
+            // Show Modal
+            document.querySelectorAll('.modal-overlay').forEach(m => m.style.display='none');
+            document.getElementById('reviewModal').style.display='flex';
+            initPanZoom(); // Initialize pan/zoom for the new modal
+            resetZoom(); // Reset zoom for the first image
+        }
+        
+        function loadReviewIndex(idx) {
+            if(idx < 0 || idx >= currentReviewImages.length) return;
+            rIndex = idx;
+            const item = currentReviewImages[idx];
+            
+            // Update Header Counter
+            document.getElementById('reviewCounter').innerText = `${idx + 1} / ${currentReviewImages.length}`;
+            document.getElementById('reviewImage').src = item.image_url;
+            
+            // Populate Fields
+            document.getElementById('reviewName').value = item.data.name || "";
+            document.getElementById('reviewNotes').value = item.data.notes || "";
+            
+            // Note: Medicine table logic removed as UI doesn't support it yet.
+            // If needed, add <div id="reviewMedList">...</div> to HTML
+            
+            resetZoom(); // Reset zoom for each new image
+        }
+        
+        // --- PAN & ZOOM LOGIC ---
+        let pzState = { scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 };
+
+        function initPanZoom() {
+            const container = document.querySelector('.editor-viewer');
+            const img = document.getElementById('reviewImage');
+            
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                pzState.scale = Math.min(Math.max(0.5, pzState.scale * delta), 5);
+                updateTransform();
+            });
+
+            container.addEventListener('mousedown', (e) => {
+                if(e.target !== img && e.target !== container) return;
+                pzState.isDragging = true;
+                pzState.startX = e.clientX - pzState.x;
+                pzState.startY = e.clientY - pzState.y;
+                container.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!pzState.isDragging) return;
+                e.preventDefault();
+                pzState.x = e.clientX - pzState.startX;
+                pzState.y = e.clientY - pzState.startY;
+                updateTransform();
+            });
+
+            window.addEventListener('mouseup', () => {
+                pzState.isDragging = false;
+                container.style.cursor = 'grab';
+            });
+        }
+
+        function updateTransform() {
+            const img = document.getElementById('reviewImage');
+            img.style.transform = `translate(${pzState.x}px, ${pzState.y}px) scale(${pzState.scale})`;
+        }
+
+        function resetZoom() {
+            pzState = { scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 };
+            updateTransform();
+        }
+
+        function navigateReview(dir) {
+            saveCurrentEdit(true); // Auto-save on nav
+            loadReviewIndex(currentReviewIndex + dir);
+        }
+
+        async function saveCurrentEdit(silent=false) {
+            if(!currentReviewImageId) return;
+            
+            const payload = {
+                employee_id: "admin", // Placeholder
+                image_id: currentReviewImageId,
+                form_data: {
+                    name: document.getElementById('reviewName').value,
+                    notes: document.getElementById('reviewNotes').value
+                }
+            };
+            
+            // Update local state first for snappiness
+            reviewData[currentReviewIndex].data = payload.form_data;
+
+            const res = await fetchSecure('/api/admin/update-submission', {
+                method: 'POST', body: JSON.stringify(payload)
+            });
+            
+            if(!silent && res && res.ok) showToast("Changes Saved");
+        }
+
+        async function saveAdminCorrection() {
+            const item = currentReviewImages[rIndex];
+            if(!item) return;
+            
+            const btn = document.querySelector('.review-form-pane .btn-primary');
+            btn.innerText = "Saving..."; btn.disabled = true;
+            
+            // Preserve existing medicines, only update Name/Notes
+            // (Full table editing would require recreating the add/remove row logic here)
+            const payload = {
+                employee_id: "ADMIN_OVERRIDE", // logic handled in backend
+                image_id: item.image_id,
+                form_data: {
+                    name: document.getElementById('editName').value,
+                    notes: document.getElementById('editNotes').value,
+                    medicines: item.data.medicines || [] 
+                }
+            };
+            
+            const res = await fetchSecure('/api/admin/update-submission', {
+                method: 'POST', body: JSON.stringify(payload)
+            });
+            
+            if(res && res.ok) {
+                // Update local model to reflect changes
+                item.data.name = payload.form_data.name;
+                item.data.notes = payload.form_data.notes;
+                alert("Correction Saved.");
+            } else {
+                alert("Save failed.");
+            }
+            btn.innerText = "Save Corrections"; btn.disabled = false;
+        }
+
+        function navReview(dir) {
+            const newIndex = rIndex + dir;
+            if(newIndex >= 0 && newIndex < currentReviewImages.length) {
+                loadReviewIndex(newIndex);
+            }
+        }
+
+        // --- ACTIONS ---
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = `✅ ${msg}`;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function openAssign(uid, name) {
+            selectedUserId = uid;
+            document.getElementById('assignTarget').innerText = `Assigning to: ${name}`;
+            const avail = projects.filter(p => !p.assigned_to || p.assigned_to === 'UNASSIGNED'); // Adjusted logic for projects list which returns assigned_to name
+            const select = document.getElementById('batchSelect');
+            select.innerHTML = avail.length ? avail.map(p => `<option value="${p.id}">${p.id} (${p.image_count} imgs)</option>`).join('') : "<option>No Batches Available</option>";
+            openModal('assignModal');
+        }
+
+        async function confirmAssign() {
+            const batchId = document.getElementById('batchSelect').value;
+            if(!batchId || batchId === 'No Batches Available') return alert("Select a batch.");
+            
+            // Calculate Minutes
+            const duration = parseFloat(document.getElementById('assignDuration').value);
+            const unit = document.getElementById('assignUnit').value;
+            
+            let minutes = 0;
+            if(unit === 'min') minutes = duration;
+            if(unit === 'hr') minutes = duration * 60;
+            if(unit === 'day') minutes = duration * 60 * 24;
+            
+            if(minutes < 5) return alert("Minimum duration is 5 minutes.");
+
+            const res = await fetchSecure('/api/projects/assign', {
+                method: 'POST', body: JSON.stringify({
+                    employee_id: selectedUserId, project_id: batchId,
+                    salary: document.getElementById('assignSalary').value, 
+                    security_amount: document.getElementById('assignSecurity').value,
+                    duration_minutes: minutes,
+                    time_limit_hours: 0 // Legacy override
+                })
+            });
+            if(res && res.ok) { closeModals(); loadAll(); showToast("Batch Assigned Successfully"); }
+        }
+
+
+
+        async function uploadBatch() {
+            const input = document.getElementById('fileInput');
+            if(!input.files || input.files.length === 0) return alert("Please select files first.");
+            
+            const btn = document.getElementById('btnUpload'); // Get the button element
+            const originalText = btn.innerText;
+            btn.innerText = "Uploading...";
+            btn.disabled = true;
+
+            const fd = new FormData();
+            for(let f of input.files) fd.append('files', f);
+            
+            try {
+                const res = await fetchSecure('/api/projects/upload', { method:'POST', body:fd });
+                if(res && res.ok) { 
+                    closeModals(); 
+                    loadAll(); 
+                    showToast("Batch Uploaded"); 
+                    // Reset input
+                    input.value = '';
+                    document.getElementById('fileList').innerHTML = '';
+                    document.getElementById('btnUpload').disabled = true;
+                    document.getElementById('btnUpload').style.opacity = '0.5';
+                    document.getElementById('btnUpload').style.cursor = 'not-allowed';
+                }
+            } catch(e) {
+                alert("Upload Failed");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // --- DRAG & DROP UTILS ---
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if(e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect(fileInput);
+            }
+        });
+
+        function handleFileSelect(input) {
+            const list = document.getElementById('fileList');
+            const btn = document.getElementById('btnUpload');
+            
+            if(input.files.length > 0) {
+                list.innerHTML = `✅ <b>${input.files.length} items selected:</b><br>` + 
+                    Array.from(input.files).slice(0, 3).map(f => `• ${f.name}`).join('<br>') + 
+                    (input.files.length > 3 ? `<br>...and ${input.files.length - 3} more` : '');
+                
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                list.innerHTML = '';
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+        }
+
+
+        async function manageUser(uid, action) {
+            if(!confirm("Are you sure?")) return;
+            await fetchSecure('/api/admin/user-action', { method:'POST', body:JSON.stringify({user_id:uid, action}) });
+            loadAll(); showToast(`User ${action}ED`);
+        }
+
+        async function resetPass(uid) {
+            const p = prompt("New Password:");
+            if(!p) return;
+            await fetchSecure('/api/admin/user-action', { method:'POST', body:JSON.stringify({user_id:uid, action:'RESET_PASSWORD', new_password:p}) });
+            showToast("Password Reset");
+        }
+
+        async function rejectProject(pid) {
+            const reason = prompt("Enter Rejection Reason:");
+            if(!reason) return;
+            
+            await fetchSecure('/api/admin/reject-project', { 
+                method: 'POST', 
+                body: JSON.stringify({ project_id: pid, reason: reason }) 
+            });
+            loadAll(); 
+            showToast("Project Rejected");
+        }
+
+        async function deleteProject(pid) {
+            if(!confirm("Delete Batch?")) return;
+            await fetchSecure(`/api/admin/projects/${pid}`, { method:'DELETE' });
+            loadAll(); showToast("Batch Deleted");
+        }
+
+        async function processWithdrawal(wid, approve) {
+            if(!approve && !confirm("Reject request?")) return;
+            await fetchSecure('/api/withdrawals/approve', { method:'POST', body:JSON.stringify({withdrawal_id:wid, approved_by_admin:approve}) });
+            loadAll(); showToast(approve ? "Funds Released" : "Request Rejected");
+        }
+
+        async function approvePayout(pid) {
+            if(!confirm("Release Payout?")) return;
+            await fetchSecure('/api/admin/approve-project', { method:'POST', body:JSON.stringify({project_id:pid, employee_id:'admin'}) });
+            loadAll(); showToast("Payout Released");
+        }
+
+        async function rejectPayout(pid) {
+            const reason = prompt("⚠️ Enter Rejection Reason (Required):");
+            if(reason === null) return; // Cancelled
+            if(!reason || reason.trim().length < 5) return alert("Reason is required (min 5 chars).");
+
+            const res = await fetchSecure('/api/admin/reject-project', { 
+                method: 'POST', 
+                body: JSON.stringify({ project_id: pid, reason: reason }) 
+            });
+            if(res && res.ok) { loadAll(); showToast("Batch Rejected & Returned"); }
+        }
+
+        function downloadCSV() {
+            const token = localStorage.getItem('token');
+            // Assuming this endpoint exists or will exist. 
+            // If not, we should probably stick to what works or create it.
+            // Original used 'api/admin/export/csv'
+            fetch('/api/admin/export/csv', { headers: {'Authorization': `Bearer ${token}`} })
+            .then(res => res.blob()).then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = "payouts.csv";
+                document.body.appendChild(a); a.click(); a.remove();
+            });
+        }
+        
+        function updateBulkUI() {
+            const checks = document.querySelectorAll('.audit-check:checked');
+            const btn = document.getElementById('bulkApproveBtn');
+            const countSpan = document.getElementById('selCount');
+            
+            if(checks.length > 0) {
+                btn.style.display = 'inline-block';
+                countSpan.innerText = checks.length;
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+        
+        async function bulkApprove() {
+            const checks = document.querySelectorAll('.audit-check:checked');
+            if(checks.length === 0) return;
+            
+            if(!confirm(`Approve ${checks.length} projects? This will release funds immediately.`)) return;
+            
+            const ids = Array.from(checks).map(c => c.value);
+            try {
+                const res = await fetchSecure('/api/admin/projects/bulk-approve', {
+                    method: 'POST',
+                    body: JSON.stringify(ids)
+                });
+                if(res.ok) {
+                    showToast(`✅ Approved ${checks.length} projects`);
+                    loadAll(); // Refresh
+                } else {
+                    showToast("❌ Bulk Action Failed");
+                }
+            } catch(e) { console.error(e); showToast("❌ Error"); }
+        }
+
+        // --- UTILS ---
+        
+        function updateBadge(id, count) {
+            const el = document.getElementById(id);
+            if(!el) return;
+            el.innerText = count;
+            el.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+
+
+        let chatActiveUserId = null;
+        
+        async function loadSupportUsers() {
+            const userList = document.getElementById('chatList');
+            if(!userList) return;
+            
+            userList.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">Loading...</div>';
+            
+            const res = await fetchSecure('/api/admin/support/users');
+            if(!res || !res.ok) {
+                userList.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">Could not load users.</div>';
+                return;
+            }
+            
+            const users = await res.json();
+            
+            // Update online count
+            const onlineCount = users.filter(u => u.is_online).length;
+            const badge = document.getElementById('onlineCount');
+            if(badge) badge.innerText = `${onlineCount} Online`;
+            
+            if(users.length === 0) {
+                userList.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">No support conversations yet.</div>';
+                return;
+            }
+            
+            userList.innerHTML = users.map(u => `
+                <div class="chat-user-item ${chatActiveUserId === u.user_id ? 'active' : ''}" 
+                     onclick="selectChatUser('${u.user_id}', '${u.full_name || u.username}')">
+                    <div class="avatar-sm" style="position:relative;">
+                        ${u.username ? u.username.charAt(0).toUpperCase() : 'U'}
+                        ${u.is_online ? '<div class="online-dot"></div>' : ''}
+                    </div>
+                    <div class="chat-user-info">
+                        <h4>${u.full_name || u.username} <span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">ID: ${u.user_id.substring(0,8)}</span></h4>
+                        <p>${u.last_message || 'No messages yet'}</p>
+                    </div>
+                    ${u.unread_count > 0 ? `<span class="badge" style="background:#ef4444; margin-left:auto;">${u.unread_count}</span>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        async function selectChatUser(userId, username) {
+            chatActiveUserId = userId;
+            
+            // Update UI
+            document.querySelectorAll('.chat-user-item').forEach(el => el.classList.remove('active'));
+            if(event && event.currentTarget) event.currentTarget.classList.add('active');
+            
+            document.getElementById('activeChatName').innerText = username || 'User';
+            document.getElementById('activeChatAvatar').innerText = username ? username.charAt(0).toUpperCase() : 'U';
+            document.getElementById('activeChatStatus').innerText = 'Loading...';
+            
+            // Enable input
+            document.getElementById('adminChatInput').disabled = false;
+            document.getElementById('adminSendBtn').disabled = false;
+            
+            // Load messages
+            const msgContainer = document.getElementById('adminChatBody');
+            msgContainer.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-muted);">Loading messages...</div>';
+            
+            const res = await fetchSecure(`/api/admin/support/messages/${userId}`);
+            if(!res || !res.ok) {
+                msgContainer.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:#ef4444;">Failed to load messages</div>';
+                return;
+            }
+            
+            const messages = await res.json();
+            document.getElementById('activeChatStatus').innerText = messages.length > 0 ? `${messages.length} messages` : 'Offline';
+            
+            if(messages.length === 0) {
+                msgContainer.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-muted);">No messages in this conversation yet.</div>';
+                return;
+            }
+            
+            msgContainer.innerHTML = messages.map(m => `
+                <div class="msg-bubble ${m.sender === 'Admin' ? 'msg-out' : 'msg-in'}">
+                    ${m.content}
+                    <div style="font-size:0.7rem; opacity:0.6; margin-top:5px;">${new Date(m.timestamp).toLocaleTimeString()}</div>
+                </div>
+            `).join('');
+            
+            // Scroll to bottom
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+            
+            // Refresh user list to update unread counts
+            loadSupportUsers();
+        }
+        
+        let isSendingAdminMsg = false; // Prevent double-sends
+        
+        async function sendAdminMsg() {
+            if(isSendingAdminMsg) return; // Already sending
+            if(!chatActiveUserId) return showToast("Select a user first");
+            
+            const input = document.getElementById('adminChatInput');
+            const content = input.value.trim();
+            if(!content) return;
+            
+            isSendingAdminMsg = true; // Lock
+            input.disabled = true;
+            document.getElementById('adminSendBtn').disabled = true;
+            
+            try {
+                const res = await fetchSecure('/api/admin/support/send', {
+                    method: 'POST',
+                    body: JSON.stringify({ user_id: chatActiveUserId, content: content })
+                });
+                
+                if(res && res.ok) {
+                    input.value = '';
+                    // Reload chat
+                    selectChatUser(chatActiveUserId, document.getElementById('activeChatName').innerText);
+                } else {
+                    showToast("Failed to send message");
+                }
+            } finally {
+                isSendingAdminMsg = false; // Unlock
+                input.disabled = false;
+                document.getElementById('adminSendBtn').disabled = false;
+                input.focus();
+            }
+        }
+        
+        // Handle Enter key in chat input
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatInput = document.getElementById('adminChatInput');
+            if(chatInput) {
+                chatInput.addEventListener('keypress', function(e) {
+                    if(e.key === 'Enter') sendAdminMsg();
+                });
+            }
+        });
+        
+        // Alias for compatibility
+        function initChatData() { loadSupportUsers(); }
+
+        function switchTab(tabId, btnElement) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-view').forEach(el => el.style.display = 'none');
+            
+            // Deactivate all nav items
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // Show target tab
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            if(activeTab) activeTab.style.display = 'block';
+            
+            // Activate nav button
+            if(btnElement) {
+                btnElement.classList.add('active');
+            } else {
+                // Fallback if called without element (e.g. from load)
+                // We'd have to find it by onclick attribute or index, but for now this is fine.
+                // Or we can querySelector based on valid tabIds
+            }
+            
+            // Auto-close sidebar on mobile after selection
+            if(window.innerWidth <= 900) {
+                 document.querySelector('.sidebar').classList.remove('active');
+                 const overlay = document.querySelector('.sidebar-overlay');
+                 if(overlay) overlay.style.display = 'none';
+            }
+            
+            // Auto-load data for specific tabs
+            if(tabId === 'dashboard') loadAll();
+            if(tabId === 'audit') loadAll();
+            if(tabId === 'finance') loadWithdrawals();
+            if(tabId === 'support') initChatData();
+            if(tabId === 'leads') loadLeads();
+            if(tabId === 'community') loadCommunityMod();
+            if(tabId === 'logs') loadLogs();
+            
+            localStorage.setItem('activeTab', tabId);
+        }
+
+        function filterTable(tableId, term) {
+            const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+            term = term.toLowerCase();
+            rows.forEach(r => r.style.display = r.innerText.toLowerCase().includes(term) ? '' : 'none');
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display='none'); }
+        function logout() { localStorage.clear(); window.location.href='/'; }
+        
+        // Optimized Polling (30s)
+        let pollInterval;
+        function startPolling() {
+            if(pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(loadAll, 30000);
+        }
+        function stopPolling() {
+            if(pollInterval) clearInterval(pollInterval);
+        }
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) stopPolling();
+            else { loadAll(); startPolling(); }
+        });
+        startPolling();
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if(overlay) overlay.style.display = document.querySelector('.sidebar').classList.contains('active') ? 'block' : 'none';
+        }
+
+        // Algorithmic Brand Generation
+        function generateBrand(seed="MedData") {
+            const canvas = document.getElementById('brandCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Simple hash function
+            let hash = 0;
+            for (let i = 0; i < seed.length; i++) {
+                hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            
+            const r = (hash & 0xFF0000) >> 16;
+            const g = (hash & 0x00FF00) >> 8;
+            const b = hash & 0x0000FF;
+            const color = `rgb(${r}, ${g}, ${b})`;
+            
+            // Draw geometric shape
+            ctx.clearRect(0, 0, 32, 32);
+            ctx.fillStyle = color;
+            
+            if (hash % 3 === 0) {
+                // Circle
+                ctx.beginPath(); ctx.arc(16, 16, 14, 0, 2 * Math.PI); ctx.fill();
+            } else if (hash % 3 === 1) {
+                // Rect
+                ctx.fillRect(4, 4, 24, 24);
+            } else {
+                // Triangle
+                ctx.beginPath(); ctx.moveTo(16, 4); ctx.lineTo(28, 28); ctx.lineTo(4, 28); ctx.fill();
+            }
+            
+            // Overlay glass effect
+            ctx.fillStyle = "rgba(255,255,255,0.2)";
+            ctx.beginPath(); ctx.arc(10, 10, 8, 0, 2 * Math.PI); ctx.fill();
+        }
+        generateBrand("AdminPanel"); // Initial gen
+
+        // --- SYSTEM CONFIG ---
+        async function loadSystemConfig() {
+            try {
+                const res = await fetchSecure('/api/system/config');
+                const data = await res.json();
+                
+                // Update Sidebar Brand & Title
+                document.querySelector('.brand-text').innerText = data.brand_name.toUpperCase();
+                document.title = `Admin | ${data.brand_name}`;
+                
+                // Update Profile Tab Inputs (if loaded)
+                if(document.getElementById('sysName')) {
+                    document.getElementById('sysName').value = data.brand_name;
+                    document.getElementById('sysMobile').value = data.support_contact;
+                    document.getElementById('sysAddress').value = data.address;
+                }
+            } catch(e) { console.error("Config Error", e); }
+        }
+
+        async function saveSystemProfile() {
+            const payload = {
+                full_name: document.getElementById('sysName').value,
+                mobile: document.getElementById('sysMobile').value,
+                address: document.getElementById('sysAddress').value
+            };
+            
+            // Call the Admin Profile Update Endpoint (Ensure this exists in Backend)
+            const res = await fetchSecure('/api/admin/update-profile', { method:'POST', body:JSON.stringify(payload) });
+            
+            if(res && res.ok) {
+                showToast("Settings Saved & Applied");
+                loadSystemConfig();
+            } else {
+                showCustomAlert("Failed to save settings. Ensure you are the Primary Admin.");
+            }
+        }
+
+        // --- LEADS & ANNOUNCEMENTS ---
+
+
+        async function postAnnouncement() {
+            const title = document.getElementById('annTitle').value;
+            const content = document.getElementById('annContent').value;
+            if(!title || !content) return showCustomAlert("Please enter title and content");
+            
+            const res = await fetchSecure('/api/admin/announcement', {
+                method: 'POST',
+                body: JSON.stringify({ title, content, is_active: true })
+            });
+            if(res && res.ok) {
+                showToast("Announcement Posted!");
+                document.getElementById('annTitle').value = "";
+                document.getElementById('annContent').value = "";
+            } else {
+                showCustomAlert("Failed to post");
+            }
+        }
+
+        // --- AUDIT LOGS ---
+        async function loadLogs(filterType = null) {
+            let url = '/api/admin/logs';
+            
+            const tbody = document.getElementById('auditLogsBody');
+            if(tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>';
+
+            const res = await fetchSecure(url);
+            if(!res || !res.ok) return;
+            let logs = await res.json();
+            
+            if(filterType === 'SESSION') {
+                logs = logs.filter(l => l.action.includes('SESSION'));
+            }
+            
+            if(tbody) {
+                tbody.innerHTML = logs.map(l => `
+                    <tr>
+                        <td style="color:var(--text-muted); font-size:0.85rem;">${new Date(l.timestamp).toLocaleString()}</td>
+                        <td><div style="display:flex; flex-direction:column;"><span style="font-weight:600;">${l.username || 'Unknown'}</span><span style="font-size:0.8rem; color:var(--text-muted);">${l.user_id || '-'}</span></div></td>
+                        <td><span class="badge badge-blue">${l.action}</span></td>
+                        <td style="max-width:400px; overflow:hidden; text-overflow:ellipsis;">${l.details}</td>
+                        <td><span style="font-family:monospace; font-size:0.85rem;">${l.ip_address || '-'}</span></td>
+                    </tr>
+                `).join('');
+                if(logs.length === 0) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No logs found</td></tr>';
+            }
+        }
+        
+
+
+        // Custom Alert Logic
+        function showCustomAlert(msg, title="Notice") {
+            document.getElementById('alertMsg').innerText = msg;
+            document.getElementById('alertTitle').innerText = title;
+            const overlay = document.getElementById('customAlert');
+            overlay.style.display = 'flex';
+            setTimeout(() => document.getElementById('alertBox').classList.add('show'), 10);
+        }
+        function closeCustomAlert() {
+            document.getElementById('alertBox').classList.remove('show');
+            setTimeout(() => document.getElementById('customAlert').style.display = 'none', 200);
+        }
+
+        // === CREATE USER FUNCTIONS ===
+        function openCreateUser() {
+            document.getElementById('createUserModal').style.display = 'flex';
+            document.getElementById('newFullName').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('newGender').value = 'M';
+            document.getElementById('newReferral').value = '';
+        }
+        
+        function closeCreateUser() {
+            document.getElementById('createUserModal').style.display = 'none';
+        }
+        
+        async function submitNewEmployee() {
+            const fullName = document.getElementById('newFullName').value.trim();
+            const password = document.getElementById('newPassword').value;
+            const gender = document.getElementById('newGender').value;
+            const referralCode = document.getElementById('newReferral').value.trim();
+            
+            // Validation
+            if (!fullName || fullName.length < 2) {
+                alert('Full name is required (minimum 2 characters)');
+                return;
+            }
+            if (!password || password.length < 4) {
+                alert('Password is required (minimum 4 characters)');
+                return;
+            }
+            
+            const payload = {
+                full_name: fullName,
+                password: password,
+                gender: gender
+            };
+            
+            if (referralCode) {
+                payload.referral_code = referralCode;
+            }
+            
+            try {
+                const res = await fetchSecure('/employees/create', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                
+                if (res && res.ok) {
+                    const data = await res.json();
+                    closeCreateUser();
+                    showToast(`Employee Created: ${data.username || fullName}`);
+                    loadAll(); // Refresh user list
+                } else {
+                    const err = await res.json();
+                    alert('Failed: ' + (err.detail || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Create user error:', error);
+                alert('Failed to create user: ' + error.message);
+            }
+        }
+
+        // Initial Load - Show Dashboard by default
+        document.addEventListener('DOMContentLoaded', function() {
+            switchTab('dashboard', document.querySelector('.nav-item'));
+        });
+        loadSystemConfig();
+        loadAll();
+        
+        // Helper: Relative Time Formatter (Fixed for UTC)
+        function getTimeAgo(dateInput) {
+            const date = new Date(dateInput);
+            // If date doesn't have timezone, assume UTC
+            if(typeof dateInput === 'string' && !dateInput.endsWith('Z')) {
+                // Adjust for timezone offset if needed, or better, leverage basic math
+                // Fastest fix for "5h ahead" is usually just treating it as UTC
+                // But let's rely on standard comparison:
+            }
+            
+            const now = new Date();
+            // Server usually returns UTC. Browser new Date() is local.
+            // Convert both to timestamps
+            const nowTs = now.getTime(); 
+            const dateTs = new Date(dateInput).getTime();
+            
+            // Check if server sent naive string (python datetime.now() string)
+            // If the diff is huge (~5.5h for India), it means we compared UTC vs Local interpretation
+            // Let's assume input is UTC.
+            const dateUtc = new Date(dateInput + (dateInput.endsWith('Z') ? '' : 'Z'));
+            
+            let diff = (now - dateUtc) / 1000;
+            
+            // Fallback for weird parsing
+            if(isNaN(diff)) diff = (now - new Date(dateInput)) / 1000;
+            
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+            if (diff < 604800) return `${Math.floor(diff/86400)}d ago`;
+            return dateUtc.toLocaleDateString();
+        }
+        
+        async function loadCommunityMod() {
+             const list = document.getElementById('pendingPostsList');
+             // Switch grid to list layout styling
+             list.style.display = 'flex';
+             list.style.flexDirection = 'column';
+             list.style.gap = '10px';
+             
+             list.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:60px;">
+                <div style="width:40px; height:40px; border:3px solid var(--primary); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 15px;"></div>
+                Loading posts...
+             </div>`;
+             
+             try {
+                 const res = await fetchSecure('/api/admin/community/pending');
+                 if(res && res.ok) {
+                     const posts = await res.json();
+                     updateBadge('pendingPostBadge', posts.length);
+                     
+                     if(posts.length === 0) {
+                         list.innerHTML = `
+                         <div style="text-align:center; padding:80px 20px;">
+                            <div style="width:80px; height:80px; background:linear-gradient(135deg, rgba(16,185,129,0.2), rgba(56,189,248,0.1)); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:2.5rem;">✨</div>
+                            <h3 style="color:white; margin:0 0 10px; font-size:1.3rem;">All Caught Up!</h3>
+                            <p style="color:var(--text-muted); margin:0; font-size:0.95rem;">No pending posts require moderation.</p>
+                         </div>`;
+                         return;
+                     }
+                     
+                     // Header for List
+                     const headerHTML = `
+                     <div style="display:grid; grid-template-columns: 2fr 4fr 1.5fr 1.5fr; gap:20px; padding:15px 25px; border-bottom:1px solid rgba(255,255,255,0.05); color:var(--text-muted); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">
+                        <div>Author</div>
+                        <div>Content</div>
+                        <div style="text-align:right;">Posted</div>
+                        <div style="text-align:right;">Actions</div>
+                     </div>`;
+                     
+                     list.innerHTML = headerHTML + posts.map((p, idx) => {
+                        // Color Logic
+                        let hash = 0;
+                        const name = p.author_name || 'User';
+                        for (let i = 0; i < name.length; i++) { hash = name.charCodeAt(i) + ((hash << 5) - hash); }
+                        const avatarColor = '#' + ((hash & 0x00FFFFFF).toString(16).padStart(6, '0'));
+                        const initials = name.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
+                        
+                        const timeAgo = getTimeAgo(p.created_at);
+                        
+                        return `
+                        <div class="mod-row" style="
+                            display:grid; 
+                            grid-template-columns: 2fr 4fr 1.5fr 1.5fr; 
+                            gap:20px; 
+                            align-items:center;
+                            background: rgba(30,41,59,0.4); 
+                            border: 1px solid rgba(255,255,255,0.03); 
+                            padding: 16px 25px; 
+                            border-radius: 12px;
+                            transition: all 0.2s;
+                            animation: fadeSlide 0.3s ease ${idx * 0.05}s both;
+                        " onmouseover="this.style.background='rgba(30,41,59,0.7)'; this.style.transform='translateX(5px)'" onmouseout="this.style.background='rgba(30,41,59,0.4)'; this.style.transform='none'">
+                        
+                            <!-- Author -->
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div style="
+                                    width:36px; height:36px; 
+                                    background: linear-gradient(135deg, ${avatarColor}, ${avatarColor}88);
+                                    border-radius:10px;
+                                    display:flex; align-items:center; justify-content:center;
+                                    font-size:0.85rem; font-weight:700; color:white;
+                                    box-shadow: 0 2px 8px ${avatarColor}30;
+                                ">${initials}</div>
+                                <div>
+                                    <div style="font-weight:600; color:white; font-size:0.95rem;">${name}</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted);">ID: ${(p.author_id || 'Unknown').substring(0,6)}...</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div style="color:#cbd5e1; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:10px;" title="${p.content.replace(/"/g, '&quot;')}">
+                                ${p.content}
+                            </div>
+                            
+                            <!-- Time -->
+                            <div style="text-align:right; font-size:0.9rem; color:var(--text-muted);">
+                                ${timeAgo}
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div style="display:flex; gap:8px; justify-content:flex-end;">
+                                <button onclick="approvePost('${p.id}')" title="Approve" style="
+                                    background: rgba(16,185,129,0.1); 
+                                    color:#10b981; 
+                                    border:1px solid rgba(16,185,129,0.2); 
+                                    width:32px; height:32px; 
+                                    border-radius:8px; 
+                                    cursor:pointer; 
+                                    display:flex; align-items:center; justify-content:center;
+                                    transition:all 0.2s;
+                                " onmouseover="this.style.background='#10b981'; this.style.color='white'" onmouseout="this.style.background='rgba(16,185,129,0.1)'; this.style.color='#10b981'">
+                                    ✔
+                                </button>
+                                <button onclick="openRejectPostModal('${p.id}')" title="Reject" style="
+                                    background: rgba(239,68,68,0.1); 
+                                    color:#ef4444; 
+                                    border:1px solid rgba(239,68,68,0.2); 
+                                    width:32px; height:32px; 
+                                    border-radius:8px; 
+                                    cursor:pointer; 
+                                    display:flex; align-items:center; justify-content:center;
+                                    transition:all 0.2s;
+                                " onmouseover="this.style.background='#ef4444'; this.style.color='white'" onmouseout="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#ef4444'">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>`;
+                     }).join('');
+                 }
+             } catch(e) { console.error(e); }
+        }
+             /* GARBAGE START
+             const list = document.getElementById('pendingPostsList');
+             list.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:60px;">
+                <div style="width:40px; height:40px; border:3px solid var(--primary); border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 15px;"></div>
+                Loading posts...
+             </div>`;
+             
+             try {
+                 const res = await fetchSecure('/api/admin/community/pending');
+                 if(res && res.ok) {
+                     const posts = await res.json();
+                     updateBadge('pendingPostBadge', posts.length);
+                     
+                     if(posts.length === 0) {
+                         list.innerHTML = `
+                         <div style="grid-column:1/-1; text-align:center; padding:80px 20px;">
+                            <div style="width:80px; height:80px; background:linear-gradient(135deg, rgba(16,185,129,0.2), rgba(56,189,248,0.1)); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:2.5rem;">✨</div>
+                            <h3 style="color:white; margin:0 0 10px; font-size:1.3rem;">All Caught Up!</h3>
+                            <p style="color:var(--text-muted); margin:0; font-size:0.95rem;">No pending posts require moderation.</p>
+                         </div>`;
+                         return;
+                     }
+                     
+                     list.innerHTML = posts.map((p, idx) => {
+                        // Generate avatar color from name
+                        let hash = 0;
+                        const name = p.author_name || 'User';
+                        for (let i = 0; i < name.length; i++) { hash = name.charCodeAt(i) + ((hash << 5) - hash); }
+                        const avatarColor = '#' + ((hash & 0x00FFFFFF).toString(16).padStart(6, '0'));
+                        const initials = name.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
+                        
+                        const timeAgo = getTimeAgo(new Date(p.created_at));
+                        
+                        return `
+                        <div class="mod-card" style="
+                            background: linear-gradient(145deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95));
+                            border: 1px solid rgba(255,255,255,0.08);
+                            border-radius: 16px;
+                            padding: 0;
+                            overflow: hidden;
+                            animation: fadeSlide 0.4s ease ${idx * 0.1}s both;
+                            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                        ">
+                            <!-- Header -->
+                            <div style="padding:20px 20px 0; display:flex; align-items:center; gap:14px;">
+                                <div style="
+                                    width:50px; height:50px; 
+                                    background: linear-gradient(135deg, ${avatarColor}, ${avatarColor}88);
+                                    border-radius:14px;
+                                    display:flex; align-items:center; justify-content:center;
+                                    font-weight:700; color:white; font-size:1.1rem;
+                                    box-shadow: 0 4px 12px ${avatarColor}40;
+                                ">${initials}</div>
+                                <div style="flex:1;">
+                                    <div style="font-weight:600; color:white; font-size:1rem; margin-bottom:2px;">${name}</div>
+                                    <div style="color:var(--text-muted); font-size:0.8rem; display:flex; align-items:center; gap:6px;">
+                                        <span style="width:6px; height:6px; background:#facc15; border-radius:50%;"></span>
+                                        Pending Review • ${timeAgo}
+                                    </div>
+                                </div>
+                                <div style="background:rgba(250,204,21,0.15); color:#facc15; padding:4px 10px; border-radius:20px; font-size:0.7rem; font-weight:600; text-transform:uppercase;">Awaiting</div>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div style="padding:16px 20px;">
+                                <div style="
+                                    background: rgba(0,0,0,0.25);
+                                    padding: 16px 18px;
+                                    border-radius: 12px;
+                                    border-left: 3px solid var(--primary);
+                                    color: #e2e8f0;
+                                    font-size: 0.95rem;
+                                    line-height: 1.6;
+                                    white-space: pre-wrap;
+                                    max-height: 120px;
+                                    overflow-y: auto;
+                                ">${p.content}</div>
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div style="
+                                padding: 16px 20px;
+                                background: rgba(0,0,0,0.2);
+                                border-top: 1px solid rgba(255,255,255,0.05);
+                                display: flex;
+                                gap: 12px;
+                            ">
+                                <button onclick="approvePost('${p.id}')" style="
+                                    flex: 1;
+                                    background: linear-gradient(135deg, #10b981, #059669);
+                                    border: none;
+                                    color: white;
+                                    padding: 12px 20px;
+                                    border-radius: 10px;
+                                    font-weight: 600;
+                                    font-size: 0.9rem;
+                                    cursor: pointer;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 8px;
+                                    transition: all 0.2s;
+                                    box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+                                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                                    <span>✓</span> Approve
+                                </button>
+                                <button onclick="openRejectPostModal('${p.id}')" style="
+                                    flex: 1;
+                                    background: transparent;
+                                    border: 1px solid rgba(239,68,68,0.5);
+                                    color: #f87171;
+                                    padding: 12px 20px;
+                                    border-radius: 10px;
+                                    font-weight: 600;
+                                    font-size: 0.9rem;
+                                    cursor: pointer;
+                                    display: flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    gap: 8px;
+                                    transition: all 0.2s;
+                                " onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='transparent'">
+                                    <span>✕</span> Reject
+                                </button>
+                            </div>
+                        </div>`;
+                     }).join('');
+                 }
+             } catch(e) { console.error(e); }
+        } */
+
+        async function approvePost(pid) {
+            if(!confirm("Approve this post for public view?")) return;
+            try {
+                const res = await fetchSecure(`/api/admin/community/${pid}/approve`, { method:'POST' });
+                if(res.ok) { showToast("Post Approved"); loadCommunityMod(); }
+            } catch(e) { console.error(e); }
+        }
+
+        // --- REJECTION LOGIC ---
+        let rejectTargetId = null;
+        let rejectType = null; // 'POST' or 'PROJECT'
+
+        function openRejectModal(id, type) {
+            rejectTargetId = id;
+            rejectType = type;
+            document.getElementById('rejectReason').value = "";
+            document.getElementById('postRejectModal').classList.add('show');
+            document.getElementById('postRejectModal').style.display = 'flex';
+        }
+
+        async function confirmReject() {
+            const reason = document.getElementById('rejectReason').value;
+            if(!reason.trim()) return alert("Please enter a reason");
+            
+            try {
+                 let url = '';
+                 let body = {};
+                 
+                 if(rejectType === 'POST') {
+                     url = `/api/admin/community/${rejectTargetId}/reject`;
+                     body = { reason: reason };
+                 } else if (rejectType === 'PROJECT') {
+                     url = '/api/admin/reject-project';
+                     body = { project_id: rejectTargetId, reason: reason };
+                 }
+                 
+                 const res = await fetchSecure(url, { method: 'POST', body: JSON.stringify(body) });
+                 
+                 if(res.ok) {
+                     showToast(`${rejectType === 'POST' ? 'Post' : 'Project'} Rejected`);
+                     closeModals();
+                     if(rejectType === 'POST') loadCommunityMod();
+                     if(rejectType === 'PROJECT') loadAll();
+                 }
+            } catch(e) { console.error(e); }
+        }
+        
+        // Backward compatibility wrappers if needed, or update calls
+        function openRejectPostModal(pid) { openRejectModal(pid, 'POST'); }
+        function rejectPayout(pid) { openRejectModal(pid, 'PROJECT'); }
+
+        // === RESTORED USER MANAGEMENT LOGIC ===
+        let viewingUserId = null;
+
+        async function viewUser(uid) {
+            viewingUserId = uid;
+            try {
+                const res = await fetchSecure(`/api/employees/me/${uid}`);
+                if(!res || !res.ok) { alert("Failed to fetch user details"); return; }
+                
+                const user = await res.json();
+                
+                // Populate Modal
+                document.getElementById('uvPic').src = user.profile_pic || "/static/default-avatar.png";
+                document.getElementById('uvName').innerText = user.full_name || user.username;
+                document.getElementById('uvCode').innerText = user.id; 
+                document.getElementById('uvStatus').innerText = "ACTIVE"; 
+                document.getElementById('uvWallet').innerText = `₹${user.wallet ? user.wallet.toLocaleString() : '0'}`;
+                
+                // Contact
+                document.getElementById('uvContact').innerHTML = `
+                    📧 ${user.email || 'N/A'}<br>
+                    📞 ${user.mobile || 'N/A'}<br>
+                    🎂 ${user.dob || 'N/A'}
+                `;
+                
+                // Address
+                // Address
+                const addrParts = [];
+                if(user.address) addrParts.push(user.address);
+                if(user.city) addrParts.push(user.city);
+                if(user.state) addrParts.push(user.state);
+                let fullAddr = addrParts.join(', ');
+                if(user.pincode) fullAddr += ` - ${user.pincode}`;
+                
+                document.getElementById('uvAddress').innerText = fullAddr || "No address provided.";
+                
+                // Bank
+                if(user.bank_account_number) {
+                    document.getElementById('uvBank').innerHTML = `
+                        BANK: ${user.bank_name || 'N/A'}<br>
+                        ACC: ${user.bank_account_number}<br>
+                        IFSC: ${user.ifsc_code}<br>
+                        HOLDER: ${user.bank_holder_name}
+                    `;
+                } else {
+                    document.getElementById('uvBank').innerHTML = `<span style="color:var(--text-muted);">No bank details linked.</span>`;
+                }
+                
+                // KYC Logic
+                const kyc = user.kyc_status || "NOT_UPLOADED";
+                const kycBadge = document.getElementById('uvKycStatus');
+                kycBadge.innerText = kyc;
+                
+                // Images
+                const aadhar = document.getElementById('uvAadhar');
+                const pan = document.getElementById('uvPan');
+                
+                if (user.aadhar_card_url) {
+                    aadhar.src = user.aadhar_card_url;
+                    document.getElementById('uvAadharLink').href = user.aadhar_card_url;
+                    aadhar.style.display = 'block';
+                } else {
+                    aadhar.src = ''; aadhar.style.display = 'none'; 
+                }
+                
+                if (user.pan_card_url) {
+                    pan.src = user.pan_card_url;
+                    document.getElementById('uvPanLink').href = user.pan_card_url;
+                    pan.style.display = 'block';
+                } else {
+                    pan.src = ''; pan.style.display = 'none';
+                }
+                
+                // Actions
+                const actions = document.getElementById('uvKycActions');
+                if(kyc === 'PENDING') {
+                    actions.style.display = 'flex';
+                    kycBadge.style.color = '#facc15';
+                } else {
+                    actions.style.display = 'none';
+                    kycBadge.style.color = kyc==='APPROVED' ? '#10b981' : (kyc==='REJECTED'?'#ef4444':'white');
+                }
+                
+                const reasonDiv = document.getElementById('uvKycReason');
+                if(kyc === 'REJECTED' && user.kyc_rejection_reason) {
+                    reasonDiv.innerText = `Reason: ${user.kyc_rejection_reason}`;
+                    reasonDiv.style.display = 'block';
+                } else {
+                    reasonDiv.style.display = 'none';
+                }
+
+                document.getElementById('userViewModal').style.display = 'flex';
+                
+            } catch(e) {
+                console.error(e);
+                alert("Error loading profile");
+            }
+        }
+        
+        function closeUserView() {
+            document.getElementById('userViewModal').style.display = 'none';
+            viewingUserId = null;
+        }
+        
+        async function verifyKYC(action) {
+            if(!viewingUserId) return;
+            let reason = "";
+            if(action === 'REJECT') {
+                reason = prompt("Enter Rejection Reason:");
+                if(!reason) return;
+            }
+            
+            if(!confirm(`Confirm ${action} for this user?`)) return;
+            
+            try {
+                const res = await fetchSecure('/api/admin/kyc/verify', {
+                    method: 'POST',
+                    body: JSON.stringify({ user_id: viewingUserId, action: action, reason: reason })
+                });
+                
+                if(res && res.ok) {
+                    showToast(`KYC ${action}ED`);
+                    viewUser(viewingUserId); // Refresh Modal
+                    loadAll(); // Refresh Table
+                } else {
+                    alert("Action Failed");
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // --- ADMIN WEBSOCKET FOR REAL-TIME ALERTS ---
+        let sysAdminSocket = null;
+        function connectSystemWS() {
+             const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+             sysAdminSocket = new WebSocket(`${protocol}://${window.location.host}/ws/admin/support`);
+             
+             sysAdminSocket.onopen = () => console.log("Admin System WS Connected");
+             
+             sysAdminSocket.onmessage = (event) => {
+                 try {
+                     const data = JSON.parse(event.data);
+                     if(data.type === 'new_support_msg') {
+                         showToast(`📩 New msg from ${data.username || data.user_id}`);
+                         // Update badge
+                         const badge = document.getElementById('globalMsgBadge');
+                         if(badge) {
+                             const count = parseInt(badge.innerText || '0') + 1;
+                             updateBadge('globalMsgBadge', count);
+                         }
+                         // Play sound
+                         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                         audio.volume = 0.5;
+                         audio.play().catch(e=>{});
+                     }
+                 } catch(e) { console.error(e); }
+             };
+             
+             sysAdminSocket.onclose = () => setTimeout(connectSystemWS, 5000); // Reconnect
+        }
+        
+        // Init WS
+        connectSystemWS();
+    </script>
+</body>
+</html>
