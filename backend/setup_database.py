@@ -13,6 +13,15 @@ def create_tables(cursor):
     # Enable Foreign Key Support
     cursor.execute("PRAGMA foreign_keys = ON;")
 
+    print("--- ⚠️ RESETTING DATABASE SCHEMA (DROP & RECREATE) ---")
+    tables = [
+        "withdrawal_requests", "wallet_transactions", "assignments", "images", "projects", 
+        "audit_logs", "announcements", "community_comments", "community_likes", "community_posts",
+        "employees", "id_counter"
+    ]
+    for table in tables:
+        cursor.execute(f"DROP TABLE IF EXISTS {table}")
+    
     # 1. ID Counter Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS id_counter (
