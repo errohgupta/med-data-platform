@@ -23,6 +23,7 @@ def create_tables(cursor):
     cursor.execute("INSERT OR IGNORE INTO id_counter (id, current_count) VALUES (1, 8851)")
 
     # 2. Employees Table
+    # 2. Employees Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS employees (
         id TEXT PRIMARY KEY,
@@ -32,7 +33,18 @@ def create_tables(cursor):
         gender TEXT NOT NULL,
         wallet_balance REAL DEFAULT 0.0,
         status TEXT DEFAULT 'ACTIVE',
+        role TEXT DEFAULT 'EMPLOYEE',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        
+        -- Gamification & Referrals --
+        referred_by_id TEXT,
+        certification_id TEXT,
+        last_login TIMESTAMP,
+        login_streak INTEGER DEFAULT 0,
+        level INTEGER DEFAULT 1,
+        xp INTEGER DEFAULT 0,
+        total_earned REAL DEFAULT 0.0,
+        
         profile_pic TEXT,
         
         -- Personal & KYC Details --
@@ -46,6 +58,12 @@ def create_tables(cursor):
         city TEXT,
         state TEXT,
         pincode TEXT,
+        
+        -- KYC Documents --
+        kyc_status TEXT DEFAULT 'NOT_UPLOADED',
+        aadhar_card_url TEXT,
+        pan_card_url TEXT,
+        kyc_rejection_reason TEXT,
         
         -- Indian Banking Details --
         bank_holder_name TEXT,
@@ -69,6 +87,11 @@ def create_tables(cursor):
         is_finalized BOOLEAN DEFAULT 0,
         is_approved BOOLEAN DEFAULT 0,
         security_refunded BOOLEAN DEFAULT 0,
+        
+        status TEXT DEFAULT 'PENDING',
+        admin_feedback TEXT,
+        completed_at TIMESTAMP,
+        payout_amount REAL DEFAULT 0.0,
         
         FOREIGN KEY (assigned_to_id) REFERENCES employees (id)
     )''')
@@ -97,19 +120,80 @@ def create_tables(cursor):
         UNIQUE(user_id, image_id)
     )''')
 
-    # 6. Withdrawal Requests Table (NEW)
+    # 6. Withdrawal Requests Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS withdrawal_requests (
         id TEXT PRIMARY KEY,
         employee_id TEXT NOT NULL,
         amount REAL NOT NULL,
+        tds_amount REAL DEFAULT 0.0,
+        net_amount REAL DEFAULT 0.0,
         bank_account TEXT NOT NULL,
         status TEXT DEFAULT 'PENDING',
+        is_instant BOOLEAN DEFAULT 0,
         requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         approved_at TIMESTAMP,
         approved_by TEXT,
         rejection_reason TEXT,
         FOREIGN KEY (employee_id) REFERENCES employees (id)
+    )''')
+    
+    # 7. Wallet Transactions (NEW)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS wallet_transactions (
+        id TEXT PRIMARY KEY,
+        employee_id TEXT NOT NULL,
+        amount REAL NOT NULL,
+        transaction_type TEXT NOT NULL,
+        description TEXT,
+        related_project_id TEXT,
+        related_withdrawal_id TEXT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (employee_id) REFERENCES employees (id)
+    )''')
+    
+    # 8. Community Tables
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS community_posts (
+        id TEXT PRIMARY KEY,
+        author_id TEXT,
+        author_name TEXT,
+        content TEXT,
+        image_url TEXT,
+        likes_count INTEGER DEFAULT 0,
+        comments_count INTEGER DEFAULT 0,
+        is_approved BOOLEAN DEFAULT 0,
+        status TEXT DEFAULT 'PENDING',
+        admin_feedback TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
+    
+    cursor.execute('''CREATE TABLE IF NOT EXISTS community_likes (post_id TEXT, user_id TEXT, PRIMARY KEY(post_id, user_id))''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS community_comments (id TEXT PRIMARY KEY, post_id TEXT, user_id TEXT, user_name TEXT, content TEXT, created_at TIMESTAMP)''')
+    
+    # 9. Audit Logs
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS audit_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        username TEXT,
+        action TEXT,
+        details TEXT,
+        ip_address TEXT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        prev_hash TEXT,
+        block_hash TEXT,
+        FOREIGN KEY (user_id) REFERENCES employees (id)
+    )''')
+    
+    # 10. Announcements
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS announcements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        content TEXT,
+        is_active BOOLEAN DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
     
     # Create Indices for Performance
