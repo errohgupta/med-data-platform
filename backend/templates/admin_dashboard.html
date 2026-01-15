@@ -537,9 +537,9 @@
         </div>
 
         <div id="tab-support" class="tab-view" style="display: none; height: calc(100vh - 80px);">
-            <div class="chat-console">
+            <div class="chat-console" id="chatConsole">
                 <!-- Sidebar -->
-                <div class="chat-sidebar">
+                <div class="chat-sidebar" id="chatSidebar">
                     <div class="chat-sidebar-header">
                         <h3>Inbox</h3>
                         <span class="badge" id="onlineCount" style="background:var(--success); color:#000;" onclick="toggleOnlineFilter()">0 Online</span>
@@ -555,9 +555,10 @@
                 </div>
                 
                 <!-- Chat Window -->
-                <div class="chat-window">
+                <div class="chat-window" id="chatWindow">
                     <div class="chat-window-header" id="chatWinHeader">
                         <div style="display:flex; align-items:center; gap:10px;">
+                            <button class="chat-back-btn" onclick="backToChatList()">←</button>
                             <div class="avatar-sm" id="activeChatAvatar">?</div>
                             <div>
                                 <h3 style="margin:0;" id="activeChatName">Select a conversation</h3>
@@ -604,6 +605,76 @@
                 .msg-out { background: var(--primary); color: #0f172a; align-self: flex-end; border-bottom-right-radius: 2px; font-weight: 500; }
                 
                 .avatar-sm { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; position: relative; }
+                
+                .chat-back-btn { display: none; background: transparent; border: 1px solid var(--border); border-radius: 50%; width: 32px; height: 32px; align-items: center; justify-content: center; color: white; cursor: pointer; margin-right: 5px; }
+                .chat-back-btn:hover { background: rgba(255,255,255,0.1); }
+
+                @media (max-width: 900px) {
+                    /* -- WHATSAPP STYLE MOBILE LAYOUT -- */
+                    
+                    /* Container */
+                    .chat-console { 
+                        display: block; 
+                        position: relative; 
+                        overflow: visible;
+                        border: none; 
+                        border-radius: 0; 
+                        background: #0f172a;
+                        height: 100%;
+                    }
+                    
+                    /* Sidebar: Full width list view */
+                    .chat-sidebar { 
+                        width: 100%; 
+                        height: 100%; 
+                        border-right: none; 
+                        display: flex; 
+                        flex-direction: column; 
+                        background: #0f172a;
+                    }
+                    
+                    /* Chat Window: Fixed position overlay */
+                    .chat-window { 
+                        position: fixed;
+                        top: 60px;
+                        left: 100%; /* Start off-screen */
+                        width: 100%;
+                        height: calc(100vh - 60px);
+                        background: #0f172a;
+                        z-index: 99999;
+                        transition: left 0.3s ease;
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    
+                    /* When body has mobile-chat-open class, show chat */
+                    body.mobile-chat-open .chat-window {
+                        left: 0;
+                    }
+                    
+                    /* Header */
+                    .chat-window-header {
+                        padding: 10px 15px;
+                        background: #1e293b;
+                    }
+                    
+                    /* Back button visible on mobile */
+                    .chat-back-btn { 
+                        display: flex !important;
+                        border: none; 
+                        background: transparent; 
+                        font-size: 1.3rem; 
+                        padding: 5px 10px 5px 0;
+                        color: white;
+                        cursor: pointer;
+                    }
+                    
+                    /* Input row */
+                    .chat-input-row {
+                        padding: 10px;
+                        background: #1e293b;
+                    }
+                }
             </style>
         </div>
 
@@ -1003,11 +1074,28 @@
         }
 
         function selectChat(userId) {
+            console.log("selectChat called for:", userId);
+            
+            // Mobile Navigation - handled by event delegation adding body class
+            // Just ensure the class is there as backup
+            if (window.innerWidth <= 900) {
+                document.body.classList.add('mobile-chat-open');
+            }
+
+            // Data Logic
             activeChatUserId = userId;
-            chatUsers[userId].unread = 0;
+            
+            if (chatUsers[userId]) {
+                chatUsers[userId].unread = 0;
+            } else {
+                console.error("User not found in chatUsers:", userId);
+                return;
+            }
+
             renderChatList();
             updateGlobalBadge();
             
+            // 3. Update Chat View
             const u = chatUsers[userId];
             document.getElementById('activeChatName').innerText = u.username;
             document.getElementById('activeChatAvatar').innerHTML = u.username[0].toUpperCase();
@@ -1017,6 +1105,16 @@
             
             document.getElementById('adminChatInput').disabled = false;
             document.getElementById('adminSendBtn').disabled = false;
+        }
+
+        function backToChatList() {
+            if (window.innerWidth <= 900) {
+                const chatWin = document.getElementById('chatWindow');
+                if (chatWin) {
+                    chatWin.classList.remove('mobile-open');
+                }
+            }
+            activeChatUserId = null;
         }
 
         function updateGlobalBadge() {
@@ -2685,6 +2783,34 @@
         
         // Init WS
         connectSystemWS();
+
+        // === MOBILE CHAT FIX: Event Delegation ===
+        document.addEventListener('click', function(e) {
+            const chatItem = e.target.closest('.chat-user-item');
+            if (chatItem) {
+                // Add class to body to show chat window on mobile
+                document.body.classList.add('mobile-chat-open');
+                
+                // Get user ID and call selectChat
+                const onclickAttr = chatItem.getAttribute('onclick');
+                if (onclickAttr) {
+                    const match = onclickAttr.match(/selectChat\('([^']+)'\)/);
+                    if (match && match[1]) {
+                        const userId = match[1];
+                        if (typeof selectChat === 'function') {
+                            selectChat(userId);
+                        }
+                    }
+                }
+            }
+        }, true);
+
+        // Back button handler - remove body class
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.chat-back-btn')) {
+                document.body.classList.remove('mobile-chat-open');
+            }
+        }, true);
     </script>
 </body>
 </html>
