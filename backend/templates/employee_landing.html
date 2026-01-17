@@ -172,59 +172,91 @@
 
 
         
-        /* --- CHAT WIDGET (Facebook Style) --- */
+        /* --- CHAT WIDGET (Facebook Messenger Style) --- */
         #chatWidget {
             position: fixed; bottom: 0; right: 20px;
-            width: 320px; height: 400px;
-            background: #1e293b; border-radius: 8px 8px 0 0;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            width: 360px; height: 480px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 -5px 40px rgba(0,0,0,0.4);
             display: none; flex-direction: column; overflow: hidden;
-            z-index: 2000; border: 1px solid var(--border); border-bottom: none;
+            z-index: 2000; border: 1px solid rgba(255,255,255,0.1); border-bottom: none;
             animation: slideInUp 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
         }
         @keyframes slideInUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         .chat-header {
-            background: var(--primary); color: #0f172a; padding: 15px;
+            background: linear-gradient(135deg, #38bdf8, #818cf8); color: #0f172a; 
+            padding: 12px 15px;
             display: flex; justify-content: space-between; align-items: center;
-            font-weight: 700; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-weight: 700; 
         }
-        .chat-header .status-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .chat-header .status-dot { 
+            width: 8px; height: 8px; background: #22c55e; border-radius: 50%; 
+            display: inline-block; 
+            animation: pulse-online 2s infinite;
+        }
+        @keyframes pulse-online { 
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); } 
+            50% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0); } 
+        }
         
         .chat-body {
-            flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+            flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
             scroll-behavior: smooth;
+            background: linear-gradient(180deg, rgba(30,41,59,0.5) 0%, rgba(15,23,42,0.8) 100%);
+        }
+        .chat-welcome {
+            text-align: center; color: rgba(255,255,255,0.6); padding: 40px 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            flex: 1;
         }
         /* Modern Scrollbar */
         .chat-body::-webkit-scrollbar { width: 6px; }
         .chat-body::-webkit-scrollbar-track { background: transparent; }
-        .chat-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
-        .chat-body::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+        .chat-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
+        .chat-body::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
 
         .chat-msg {
-            max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 0.9rem; line-height: 1.4;
+            max-width: 80%; padding: 10px 14px; border-radius: 18px; font-size: 0.9rem; line-height: 1.5;
             position: relative; word-wrap: break-word;
+            animation: fadeInMsg 0.2s ease-out;
         }
-        .msg-sent { background: var(--primary); color: #0f172a; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .msg-received { background: #334155; color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
+        @keyframes fadeInMsg { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .msg-sent { 
+            background: linear-gradient(135deg, #38bdf8, #818cf8); color: white; 
+            align-self: flex-end; border-bottom-right-radius: 4px; 
+        }
+        .msg-received { 
+            background: #334155; color: white; 
+            align-self: flex-start; border-bottom-left-radius: 4px; 
+        }
+        .msg-time {
+            font-size: 0.7rem; opacity: 0.6; margin-top: 4px;
+        }
         
         .typing-indicator { font-size: 0.75rem; color: var(--text-muted); align-self: flex-start; margin-left: 10px; display: none; }
         
         .chat-input-area {
-            padding: 15px; background: #1e293b; border-top: 1px solid var(--border);
-            display: flex; gap: 10px;
+            padding: 12px 15px; background: rgba(30,41,59,0.95); border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex; gap: 10px; align-items: center;
         }
         .chat-input {
-            flex: 1; background: #0f172a; border: 1px solid var(--border); color: white;
-            padding: 10px; border-radius: 20px; outline: none; transition: 0.2s;
+            flex: 1; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); color: white;
+            padding: 12px 16px; border-radius: 24px; outline: none; transition: 0.2s;
+            font-size: 0.9rem;
         }
-        .chat-input:focus { border-color: var(--primary); }
+        .chat-input::placeholder { color: rgba(255,255,255,0.4); }
+        .chat-input:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.15); }
         .chat-send-btn {
-            background: var(--primary); color: #0f172a; border: none; width: 40px; height: 40px;
+            background: linear-gradient(135deg, #38bdf8, #818cf8); color: white; border: none; 
+            width: 44px; height: 44px; min-width: 44px;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             cursor: pointer; transition: 0.2s;
         }
-        .chat-send-btn:hover { transform: scale(1.1); }
+        .chat-send-btn:hover { transform: scale(1.08); box-shadow: 0 4px 15px rgba(56,189,248,0.4); }
+        .chat-send-btn:active { transform: scale(0.95); }
         
         /* Floating Toggle Button (Facebook Style Tab) */
         .chat-fab {
@@ -274,13 +306,22 @@
         ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
 
         .chat-badge {
-            position: absolute; top: -5px; right: -5px;
-            background: #ef4444; color: white;
-            border-radius: 50%; width: 20px; height: 20px;
-            font-size: 12px; display: flex; align-items: center; justify-content: center;
-            font-weight: bold; border: 2px solid #0f172a;
+            position: absolute; top: -8px; right: -8px;
+            background: linear-gradient(135deg, #ef4444, #dc2626); color: white;
+            border-radius: 12px; min-width: 22px; height: 22px; padding: 0 6px;
+            font-size: 11px; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; border: 2px solid #0f172a;
             display: none;
-            box-shadow: 0 0 5px rgba(239,68,68, 0.5);
+            box-shadow: 0 2px 8px rgba(239,68,68, 0.5);
+        }
+        .chat-badge.has-messages {
+            display: flex !important;
+            animation: badge-bounce 0.5s ease-out;
+        }
+        @keyframes badge-bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
         }
         .highlight-chat {
             animation: pulse-red 1.5s infinite;
@@ -571,6 +612,37 @@
              .chat-fab svg { width: 28px; height: 28px; fill: white; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
              .chat-fab .fab-text { display: none; }
              .chat-fab:active { transform: scale(0.95); }
+             
+             /* CHAT WIDGET MOBILE - Facebook "Short Window" Popup Style */
+             #chatWidget {
+                 position: fixed !important;
+                 top: auto !important;
+                 bottom: 85px !important; /* Above the FAB/Nav */
+                 left: 10px !important;
+                 right: 10px !important;
+                 width: auto !important;
+                 height: 60vh !important; /* "Short window" height */
+                 max-height: 500px !important;
+                 border-radius: 16px !important;
+                 z-index: 10000 !important;
+                 background: #1e293b !important;
+                 display: none; 
+                 flex-direction: column;
+                 box-shadow: 0 5px 30px rgba(0,0,0,0.5) !important;
+                 border: 1px solid rgba(255,255,255,0.1) !important;
+             }
+             /* Reset header padding */
+             #chatWidget .chat-header {
+                 padding-top: 12px; 
+             }
+             #chatWidget .chat-body {
+                 flex: 1;
+                 min-height: 150px;
+             }
+             #chatWidget .chat-input-area {
+                 padding: 12px;
+                 padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+             }
         }
         
         @keyframes slideUpSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -3000,28 +3072,40 @@ function renderCommunityFeed(posts) {
         };
     </script>
 
-    <!-- CHAT WIDGET HTML -->
+    <!-- CHAT WIDGET HTML (Facebook Messenger Style) -->
     <button class="chat-fab" id="chatFab" onclick="toggleChat()">
         <span class="chat-badge" id="msgBadge">0</span>
         <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-        <span class="fab-text">Helpdesk</span>
+        <span class="fab-text">Support</span>
     </button>
 
     <div id="chatWidget">
         <div class="chat-header">
-            <div style="display:flex; align-items:center;">
-                <span class="status-dot"></span> Admin Support
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:36px; height:36px; background:linear-gradient(135deg, #38bdf8, #818cf8); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                </div>
+                <div>
+                    <div style="font-weight:700; font-size:0.95rem;">Support</div>
+                    <div style="font-size:0.75rem; opacity:0.8; display:flex; align-items:center; gap:4px;">
+                        <span class="status-dot"></span> Online • Typically replies instantly
+                    </div>
+                </div>
             </div>
-            <button onclick="toggleChat()" style="background:none; border:none; color:#0f172a; font-size:1.2rem; cursor:pointer; padding:0 5px;">&times;</button>
+            <button onclick="toggleChat()" style="background:rgba(0,0,0,0.1); border:none; color:#0f172a; width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">×</button>
         </div>
         <div class="chat-body" id="chatBody">
-            <div style="text-align:center; color:rgba(255,255,255,0.5); padding:20px; font-size:0.9rem;">
-                👋 Hi there! Need help? <br>Send us a message.
+            <div class="chat-welcome">
+                <div style="font-size:2rem; margin-bottom:10px;">👋</div>
+                <div style="font-weight:600; margin-bottom:5px;">Hi there!</div>
+                <div style="font-size:0.85rem; opacity:0.7;">How can we help you today?</div>
             </div>
         </div>
         <div class="chat-input-area">
             <input type="text" id="chatInput" class="chat-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendChatMessage()">
-            <button class="chat-send-btn" onclick="sendChatMessage()">➤</button>
+            <button class="chat-send-btn" onclick="sendChatMessage()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
         </div>
     </div>
 </body>
