@@ -502,7 +502,39 @@
             }
             
             /* ADD PADDING TO CONTAINER SO CONTENT DOESNT HIDE BEHIND NAV */
-            .container { padding-bottom: 90px; }
+            .container { padding-bottom: 100px; }
+            .view { padding-bottom: 100px !important; }
+            main { padding-bottom: 100px; }
+            
+            /* ANALYTICS TAB MOBILE FIXES */
+            #tab-analytics { padding: 0 15px !important; }
+            #tab-analytics > div:first-child { 
+                flex-direction: column !important; 
+                align-items: flex-start !important; 
+                gap: 15px !important;
+            }
+            #tab-analytics > div:first-child h2 { font-size: 1.4rem !important; }
+            #tab-analytics > div:first-child button { 
+                width: 100% !important; 
+                justify-content: center !important;
+            }
+            /* Metrics Grid - Stack on mobile */
+            #tab-analytics > div:nth-child(2) { 
+                grid-template-columns: 1fr !important; 
+                gap: 12px !important;
+            }
+            #tab-analytics > div:nth-child(2) .card { padding: 18px !important; }
+            #tab-analytics > div:nth-child(2) .card > div:nth-child(2) { font-size: 0.75rem !important; }
+            #tab-analytics > div:nth-child(2) .card > div:nth-child(3) { font-size: 1.8rem !important; }
+            /* Charts Grid - Full width on mobile */
+            #tab-analytics > div:nth-child(3) { 
+                grid-template-columns: 1fr !important; 
+                gap: 15px !important;
+            }
+            #tab-analytics > div:nth-child(3) .card { padding: 15px !important; }
+            #tab-analytics > div:nth-child(3) .card > div:last-child { 
+                height: 220px !important; 
+            }
             
             /* Responsive Wallet Dropdown -> BOTTOM SHEET */
             .wallet-dropdown {
@@ -511,7 +543,7 @@
                 background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); 
                 border: 1px solid rgba(255,255,255,0.1); border-bottom: none;
                 border-radius: 24px 24px 0 0; 
-                padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 20px)) 20px; 
+                padding: 20px 20px calc(100px + env(safe-area-inset-bottom, 20px)) 20px; 
                 z-index: 2000; 
                 box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
                 animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1);
