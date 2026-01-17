@@ -239,6 +239,7 @@
             font-size: 1rem; font-weight: 700;
             border: none; transition: 0.2s;
         }
+        .chat-fab svg { width: 24px; height: 24px; fill: #0f172a; }
         .chat-fab:hover { height: 50px; }
         
         .wa-link {
@@ -340,9 +341,6 @@
             .modal { width: 90%; padding: 25px; }
             .card-top { flex-direction: column; align-items: flex-start; gap: 15px; }
             .card-top .status-badge { align-self: flex-start; }
-            .chat-fab { right: 15px !important; bottom: 85px !important; width: 60px !important; height: 60px !important; border-radius: 50% !important; display: flex; align-items: center; justify-content: center; padding: 0 !important; }
-            .chat-fab span:not(.notification-badge) { display: none; } /* Hide text on mobile */
-            .chat-fab svg { margin: 0 !important; width: 32px; height: 32px; }
             .chat-widget { right: 0; bottom: 0; width: 100%; height: 100%; border-radius: 0; }
         }
         /* Custom Alert Modal */
@@ -404,6 +402,165 @@
 
         .status-ready { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); animation: pulse-soft 2s infinite; }
         .pulse-btn { animation: pulse-soft 2s infinite; }
+
+        /* --- RESPONSIVE REFACTORS --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .sidebar-layout {
+            display: grid;
+            grid-template-columns: 3fr 1fr; /* Desktop Default */
+            gap: 30px;
+        }
+        
+        .mobile-stack {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap; 
+        }
+        
+        .mobile-stack > .card {
+            flex: 1;
+            min-width: 200px; 
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 900px) {
+            .sidebar-layout {
+                grid-template-columns: 1fr; /* Stack on mobile */
+            }
+            .dashboard-grid {
+                grid-template-columns: 1fr; 
+            }
+            .profile-container {
+                grid-template-columns: 1fr;
+            }
+            .tabs {
+                width: 100%;
+                overflow-x: auto;
+                white-space: nowrap;
+                justify-content: flex-start; 
+                padding: 10px 5px;
+            }
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+            .modal {
+                width: 95% !important;
+                padding: 20px !important;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            /* Fix Tabs to look better on mobile */
+            .tab-btn {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+            }
+            
+            /* HIDE DESKTOP TABS ON MOBILE */
+            .tabs { display: none !important; }
+            
+            /* MOBILE NAV */
+            .mobile-nav {
+                display: flex !important;
+                position: fixed; bottom: 0; left: 0; width: 100%;
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: blur(12px);
+                border-top: 1px solid rgba(255,255,255,0.1);
+                justify-content: space-around;
+                padding: 10px 0;
+                z-index: 9999;
+                padding-bottom: env(safe-area-inset-bottom, 15px); /* iPhone Home Bar */
+            }
+            .nav-item {
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                background: none; border: none; color: var(--text-muted);
+                font-size: 0.7rem; font-weight: 600; gap: 4px;
+                cursor: pointer; transition: 0.2s;
+                position: relative;
+            }
+            .nav-item svg { width: 24px; height: 24px; fill: currentColor; }
+            .nav-item.active { color: var(--primary); }
+            .nav-item.active::after {
+                content: ''; position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+                width: 30px; height: 3px; background: var(--primary);
+                border-radius: 0 0 4px 4px;
+                box-shadow: 0 4px 10px var(--primary);
+            }
+            
+            /* Menu Grid */
+            .menu-grid {
+                display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+            }
+            .menu-card {
+                background: var(--glass-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--glass-border);
+                display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+                text-decoration: none !important; color: white !important;
+            }
+            
+            /* ADD PADDING TO CONTAINER SO CONTENT DOESNT HIDE BEHIND NAV */
+            .container { padding-bottom: 90px; }
+            
+            /* Responsive Wallet Dropdown -> BOTTOM SHEET */
+            .wallet-dropdown {
+                display: none; position: fixed; bottom: 0; left: 0; right: 0; top: auto;
+                width: 100%; max-width: 100%; transform: none;
+                background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); 
+                border: 1px solid rgba(255,255,255,0.1); border-bottom: none;
+                border-radius: 24px 24px 0 0; 
+                padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 20px)) 20px; 
+                z-index: 2000; 
+                box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+                animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            .wallet-dropdown::before {
+                content: ''; display: block; width: 40px; height: 5px; background: rgba(255,255,255,0.25);
+                margin: 0 auto 20px auto; border-radius: 10px; /* Drag handle look */
+            }
+            
+            .wallet-overlay {
+                display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.6); z-index: 1999; backdrop-filter: blur(8px);
+                animation: fadeInOverlay 0.3s ease-out;
+            }
+            
+            /* Premium Chat FAB Mobile */
+            .chat-fab {
+                 right: 20px !important; bottom: 90px !important; 
+                 width: 56px !important; height: 56px !important; 
+                 border-radius: 50% !important; padding: 0 !important;
+                 background: linear-gradient(135deg, #38bdf8, #818cf8) !important;
+                 box-shadow: 0 10px 25px rgba(56, 189, 248, 0.5) !important;
+                 border: 1px solid rgba(255,255,255,0.2) !important;
+             }
+             .chat-fab svg { width: 28px; height: 28px; fill: white; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
+             .chat-fab .fab-text { display: none; }
+             .chat-fab:active { transform: scale(0.95); }
+        }
+        
+        @keyframes slideUpSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Desktop Hide Bottom Nav */
+        @media (min-width: 901px) {
+            .mobile-nav { display: none !important; }
+            
+            .wallet-dropdown {
+                display: none; position: fixed; top: 70px; right: 100px; width: 340px;
+                background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); 
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 16px; padding: 20px; z-index: 2000; 
+                box-shadow: 0 20px 50px -10px rgba(0,0,0,0.5);
+                backdrop-filter: blur(20px);
+                animation: fadeInDropdown 0.2s ease-out;
+            }
+            .wallet-dropdown::before { display: none; }
+            .wallet-overlay { display: none !important; }
+        }
+        @keyframes fadeInDropdown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -428,21 +585,32 @@
 
             <div class="wallet-pill" id="streakDisplay" style="background:rgba(234, 179, 8, 0.1); color:#facc15; border-color:rgba(234, 179, 8, 0.2); display:none;">🔥 0 Days</div>
             
-            <!-- WALLET DROPDOWN CONTAINER -->
-            <div style="position:relative;">
-                <div class="wallet-pill" id="walletDisplay" onclick="toggleWalletDropdown()">...</div>
-                <div id="walletDropdown" style="display:none; position:absolute; top:120%; right:0; width:300px; background:#1e293b; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:15px; z-index:100; box-shadow:0 10px 40px rgba(0,0,0,0.5);">
-                    <h4 style="margin:0 0 10px 0; color:white; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">Recent Activity</h4>
-                    <div id="walletDropdownList" style="max-height:200px; overflow-y:auto;"></div>
-                    <div style="margin-top:10px; text-align:center;">
-                        <button onclick="switchTab('withdrawals'); toggleWalletDropdown();" style="background:none; border:none; color:var(--primary); font-size:0.8rem; cursor:pointer; text-decoration:underline;">View Full History</button>
-                    </div>
-                </div>
-            </div>
+            <!-- WALLET TRIGGER ONLY -->
+            <div class="wallet-pill" id="walletDisplay" onclick="toggleWalletDropdown()">...</div>
 
             <button onclick="logout()" style="background:transparent; border:none; color:var(--danger); font-weight:600; cursor:pointer; font-size:0.9rem;">Sign Out</button>
         </div>
     </header>
+    
+    <!-- WALLET SHEET (Body Level for Fixed Positioning) -->
+    <div id="walletOverlay" class="wallet-overlay" onclick="toggleWalletDropdown()"></div>
+    <div id="walletDropdown" class="wallet-dropdown">
+        <!-- Premium Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div>
+                <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:4px;">Recent Activity</div>
+                <h3 style="margin:0; color:white; font-size:1.3rem; font-weight:700;">💰 Wallet</h3>
+            </div>
+            <button onclick="toggleWalletDropdown()" style="background:rgba(255,255,255,0.1); border:none; color:white; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:1.2rem; display:flex; align-items:center; justify-content:center;">&times;</button>
+        </div>
+        
+        <!-- Transaction List -->
+        <div id="walletDropdownList" style="max-height:280px; overflow-y:auto; margin-bottom:15px;"></div>
+        
+        <!-- Footer Button -->
+        <button onclick="switchTab('withdrawals'); toggleWalletDropdown();" style="width:100%; background:linear-gradient(135deg, var(--primary), var(--accent)); color:white; border:none; padding:14px; border-radius:12px; font-weight:700; cursor:pointer; font-size:0.95rem;">View Full History →</button>
+    </div>
+
 
     <main class="container">
         
@@ -464,7 +632,7 @@
 
         <!-- Active View -->
         <!-- Active Work Tab -->
-        <div id="tab-active" class="view slide-in" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap:25px;">
+        <div id="tab-active" class="view slide-in dashboard-grid">
             <div style="grid-column: 1/-1;">
                  <div class="hero-sub" id="welcomeHeader" style="display:none;">Here is your workstation overview.</div>
     
@@ -474,13 +642,13 @@
                         <span style="font-size:1.2rem;">⚠️</span>
                         <div style="font-weight:700; font-size:0.95rem;">Action Required: Complete your KYC to enable certifications & payouts.</div>
                     </div>
-                    <button onclick="switchTab('profile', document.querySelectorAll('.tab-btn')[5])" style="background:black; color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:700; box-shadow:0 2px 10px rgba(0,0,0,0.2);">Verify Now &rarr;</button>
+                    <button onclick="switchTab('profile', document.querySelectorAll('.tab-btn')[6])" style="background:black; color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:700; box-shadow:0 2px 10px rgba(0,0,0,0.2);">Verify Now &rarr;</button>
                  </div>
             </div>
 
 
             <!-- QUICK STATS ROW -->
-            <div style="grid-column: 1/-1; display:flex; gap:20px; flex-wrap:wrap; margin-bottom:10px;">
+            <div style="grid-column: 1/-1;" class="mobile-stack">
                  <div class="card" style="flex:1; padding:20px; min-width:200px; display:flex; align-items:center; gap:15px; background:linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05)); border:1px solid rgba(59, 130, 246, 0.2);">
                      <div style="font-size:2rem;">💰</div>
                      <div>
@@ -498,7 +666,7 @@
             </div>
 
             <!-- MAIN GRID: Left (Projects) | Right (Sidebar) -->
-            <div style="grid-column: 1/-1; display:grid; grid-template-columns: 3fr 1fr; gap:30px;">
+            <div style="grid-column: 1/-1;" class="sidebar-layout">
                 
                 <!-- LEFT COLUMN: Work Feed -->
                 <div style="display:flex; flex-direction:column; gap:20px;">
@@ -822,7 +990,57 @@
                 </form>
             </div>
         </section>
+        
+        <!-- MOBILE MORE MENU -->
+        <section id="tab-more" class="view" style="display:none;">
+            <div style="margin-bottom:30px;">
+                <h2 style="color:white; margin:0 0 10px 0;">Menu</h2>
+                <div class="menu-grid">
+                    <a href="javascript:void(0)" onclick="switchTab('analytics')" class="menu-card">
+                        <div style="font-size:2rem; background:rgba(56,189,248,0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#38bdf8;">📊</div>
+                        <div style="font-weight:600;">Analytics</div>
+                    </a>
+                    <a href="javascript:void(0)" onclick="switchTab('certifications')" class="menu-card">
+                        <div style="font-size:2rem; background:rgba(168,85,247,0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#a855f7;">🎓</div>
+                        <div style="font-weight:600;">Certifications</div>
+                    </a>
+                    <a href="javascript:void(0)" onclick="switchTab('profile')" class="menu-card">
+                        <div style="font-size:2rem; background:rgba(16,185,129,0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#10b981;">👤</div>
+                        <div style="font-weight:600;">My Profile</div>
+                    </a>
+                    <a href="javascript:void(0)" onclick="logout()" class="menu-card" style="border-color:rgba(239,68,68,0.3);">
+                        <div style="font-size:2rem; background:rgba(239,68,68,0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#ef4444;">🚪</div>
+                        <div style="font-weight:600; color:#ef4444;">Sign Out</div>
+                    </a>
+                </div>
+            </div>
+        </section>
+        
     </main>
+
+    <!-- FIXED MOBILE BOTTOM NAV -->
+    <nav class="mobile-nav">
+        <button class="nav-item active" id="nav-home" onclick="switchTab('active')">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            Home
+        </button>
+        <button class="nav-item" id="nav-history" onclick="switchTab('history')">
+            <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+            History
+        </button>
+        <button class="nav-item" id="nav-finance" onclick="switchTab('withdrawals')">
+            <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+            Finance
+        </button>
+        <button class="nav-item" id="nav-community" onclick="switchTab('community')">
+            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            Community
+        </button>
+        <button class="nav-item" id="nav-more" onclick="switchTab('more')">
+            <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+            Menu
+        </button>
+    </nav>
 
     <div id="walletModal" class="modal-overlay">
         <div class="modal" style="width:500px;">
@@ -1239,7 +1457,9 @@
             // GRID VIEW - Wrapped in inner div to maintain parent structure
             // container.style.display = "grid"; // REMOVED
             
-            let gridHtml = `<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">`;
+            // GRID VIEW - Wrapped in inner div to maintain parent structure
+            
+            let gridHtml = `<div class="dashboard-grid">`;
             
             activeProjects.forEach(p => {
                 const percent = p.total_images > 0 ? Math.round((p.completed_by_user / p.total_images) * 100) : 0;
@@ -1550,17 +1770,45 @@
             const target = document.getElementById('tab-'+id);
 
             // FIX: Unified Grid/Block behavior. 
-            // If the section is designed as grid (like active), use grid. Else block.
-            if(id === 'active' || id === 'history') target.style.display = 'grid';
-            else target.style.display = 'block';
+            // If the section is designed as grid (like active), use grid (via class).
             
+            if(id === 'active' || id === 'history') {
+                target.style.display = 'grid'; 
+                if(id === 'history') target.classList.add('dashboard-grid'); 
+            }
+            else {
+                target.style.display = 'block';
+            }
+            
+            // DESKTOP TABS UPDATE
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            if(btn) btn.classList.add('active');
+            if(!btn) {
+                // Try to find the desktop tab corresponding to this id
+                const map = {'active':0, 'history':1, 'withdrawals':2, 'certifications':3, 'analytics':4, 'community':5, 'profile':6};
+                const idx = map[id];
+                const tabs = document.querySelectorAll('.tab-btn');
+                if(tabs[idx]) tabs[idx].classList.add('active');
+            } else {
+                btn.classList.add('active');
+            }
             
+            // MOBILE NAV UPDATE
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            // Mapping for Mobile
+            let navId = '';
+            if(id==='active') navId = 'nav-home';
+            else if(id==='history') navId = 'nav-history';
+            else if(id==='withdrawals') navId = 'nav-finance';
+            else if(id==='community') navId = 'nav-community';
+            else navId = 'nav-more'; // Profile, Analytics, Certs, etc fall under "More"
+            
+            const navBtn = document.getElementById(navId);
+            if(navBtn) navBtn.classList.add('active');
+
             if(id === 'history') loadProjectHistory();
-            if(id === 'withdrawals') loadWalletHistory(); // Fixed: Call finance loader
+            if(id === 'withdrawals') loadWalletHistory(); 
             if(id === 'active') loadData(); 
-            if(id === 'analytics') loadAnalytics(); // Now implemented
+            if(id === 'analytics') loadAnalytics(); 
             if(id === 'community') loadCommunityFeed();
         }
 
@@ -1717,10 +1965,13 @@
         // --- WALLET LOGIC ---
         function toggleWalletDropdown() {
             const dd = document.getElementById('walletDropdown');
+            const overlay = document.getElementById('walletOverlay');
             if(dd.style.display === 'block') {
                 dd.style.display = 'none';
+                if(overlay) overlay.style.display = 'none';
             } else {
                 dd.style.display = 'block';
+                if(overlay) overlay.style.display = 'block';
                 loadWalletHistorySmall();
             }
         }
@@ -1740,14 +1991,18 @@
                     }
                     // Show last 5
                     list.innerHTML = txs.slice(0,5).map(t => {
-                         const isCredit = t.amount >= 0;
+                        const isCredit = t.amount >= 0;
+                        const icon = isCredit ? '⬇️' : '↗️'; // Simple icons, or use SVG if possible. Let's use generic sleek circles.
                          return `
-                            <div style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.85rem; display:flex; justify-content:space-between;">
-                                <div>
-                                    <div style="color:white;">${t.description || t.type}</div>
-                                    <div style="font-size:0.75rem; color:var(--text-muted);">${new Date(t.timestamp).toLocaleDateString()}</div>
+                            <div class="wallet-item" style="padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:12px;">
+                                <div style="width:36px; height:36px; border-radius:50%; background:${isCredit?'rgba(16, 185, 129, 0.15)':'rgba(239, 68, 68, 0.15)'}; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                                    ${isCredit ? '💰' : '💸'}
                                 </div>
-                                <div style="font-weight:600; color:${isCredit?'#10b981':'#ef4444'};">
+                                <div style="flex:1;">
+                                    <div style="color:white; font-weight:600; font-size:0.9rem;">${t.description || t.type}</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">${new Date(t.timestamp).toLocaleDateString()}</div>
+                                </div>
+                                <div style="font-weight:700; color:${isCredit?'#34d399':'#f87171'}; font-size:0.95rem;">
                                     ${isCredit?'+':''}₹${Math.abs(t.amount)}
                                 </div>
                             </div>
@@ -2716,8 +2971,8 @@ function renderCommunityFeed(posts) {
     <!-- CHAT WIDGET HTML -->
     <button class="chat-fab" id="chatFab" onclick="toggleChat()">
         <span class="chat-badge" id="msgBadge">0</span>
-        <span style="font-size:1.2rem;">💬</span>
-        <span>Helpdesk</span>
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+        <span class="fab-text">Helpdesk</span>
     </button>
 
     <div id="chatWidget">
